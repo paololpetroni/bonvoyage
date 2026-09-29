@@ -1,0 +1,92 @@
+// Categories and their rating scales. Same scales as the Community prototype (prototypes/community.html),
+// kept here so the rating form (Phase 3) and recommendations (Phase 4) share one source of truth.
+// Criterion: [key, label, default importance 0-10, hint, isOptionalAmenity]
+
+export const CATEGORIES = {
+  restaurants: {
+    label: "Restaurants",
+    unit: "per person",
+    tagTitle: "Flavor profile",
+    tags: [["spicy", "Spicy"], ["umami", "Savory / umami"], ["fresh", "Fresh & light"], ["rich", "Rich & hearty"], ["sweet", "Sweet"], ["smoky", "Smoky / grilled"], ["tangy", "Tangy / sour"]],
+    criteria: [
+      ["food", "Food quality", 10, "Taste, execution, freshness"],
+      ["value", "Value for money", 7, "Portions and quality for the price"],
+      ["local", "Local character", 6, "Authentic to the city or cuisine"],
+      ["service", "Service", 6, "Attentive, knowledgeable, friendly"],
+      ["atmos", "Atmosphere", 5, "Decor, lighting, energy"],
+      ["clean", "Cleanliness", 5, "Dining room and washrooms"],
+      ["wait", "Wait & reservations", 3, "Ease of getting a table"],
+      ["diet", "Dietary options", 3, "Vegetarian, gluten-free, allergies"],
+    ],
+  },
+  bars: {
+    label: "Bars & breweries",
+    unit: "per evening",
+    tagTitle: "Drinks profile",
+    tags: [["hoppy", "Hoppy / bitter"], ["sour", "Sour & funky"], ["malty", "Malty / bready"], ["roasty", "Dark & roasty"], ["spirit", "Spirit-forward"], ["fruity", "Fruity / sweet"], ["lively", "Loud & lively"]],
+    criteria: [
+      ["drinks", "Drink quality", 9, "Beer, cocktails, wine done well"],
+      ["vibe", "Atmosphere & vibe", 8, "Energy, music, look and feel"],
+      ["selection", "Selection", 7, "Range of taps, spirits, house specials"],
+      ["service", "Service speed", 6, "How fast you get a drink when busy"],
+      ["value", "Value for money", 6, "Price per drink for the quality"],
+      ["talk", "Can you talk?", 4, "Noise level for conversation"],
+      ["food", "Food", 3, "Bar snacks or kitchen quality"],
+      ["crowd", "Crowd fit", 3, "Welcoming to visitors and groups"],
+    ],
+  },
+  hotels: {
+    label: "Hotels",
+    unit: "per night",
+    tagTitle: "Hotel style",
+    tags: [["quiet", "Quiet & calm"], ["lively", "Social & lively"], ["luxury", "Luxury"], ["design", "Design-forward"], ["business", "Business-ready"], ["family", "Family-friendly"], ["budget", "No-frills budget"]],
+    criteria: [
+      ["comfort", "Room comfort & bed", 9, "Mattress, pillows, room size"],
+      ["clean", "Cleanliness", 8, "Room, bathroom, common areas"],
+      ["noise", "Noise insulation", 7, "Street, hallway and neighbour noise"],
+      ["service", "Customer service", 7, "Front desk, housekeeping, problem solving"],
+      ["sights", "Proximity to sights", 6, "Walkable to what you came to see"],
+      ["transit", "Proximity to transit", 5, "Subway, train, airport access"],
+      ["breakfast", "Breakfast quality", 5, "Free or paid, judged on quality", true],
+      ["value", "Value for money", 5, "Worth what you paid"],
+      ["wifi", "Wi-Fi & workspace", 2, "Speed, a desk you can work at"],
+      ["pool", "Pool", 2, "Cleanliness, hours, size", true],
+      ["gym", "Gym", 2, "Equipment and hours", true],
+    ],
+  },
+  sports: {
+    label: "Sports events",
+    unit: "per ticket",
+    tagTitle: "Game-day style",
+    tags: [["rowdy", "Rowdy crowd"], ["family", "Family outing"], ["premium", "Premium experience"], ["local", "Local & niche"], ["outdoors", "Outdoors"]],
+    criteria: [
+      ["sight", "Sightlines", 9, "How well you see the play from typical seats"],
+      ["atmos", "Crowd atmosphere", 9, "Energy, chants, game-day feel"],
+      ["value", "Ticket value", 6, "Experience for the ticket price"],
+      ["transit", "Getting there", 5, "Transit, parking, getting home"],
+      ["conc", "Food & drink", 4, "Concession quality and prices"],
+      ["entry", "Entry & lines", 3, "Security, gates, washroom lines"],
+      ["fac", "Facilities", 3, "Washrooms, concourses, accessibility"],
+      ["seats", "Seat comfort", 2, "Legroom, backs, shade"],
+    ],
+  },
+  sights: {
+    label: "Tourist attractions",
+    unit: "per person",
+    tagTitle: "Sightseeing style",
+    tags: [["history", "History"], ["art", "Art & design"], ["nature", "Nature & outdoors"], ["science", "Science"], ["kids", "Great with kids"], ["adventure", "Active & adventurous"], ["food", "Food-focused"]],
+    criteria: [
+      ["exp", "The experience itself", 10, "Did it live up to the hype?"],
+      ["time", "Time well spent", 6, "Worth the hours it takes"],
+      ["value", "Value for money", 6, "Entry price for what you get"],
+      ["crowds", "Crowds & wait", 5, "Lines, crowding, booking ahead"],
+      ["guide", "Guides & information", 4, "Staff, signage, audio guide"],
+      ["transit", "Proximity to transit", 4, "Easy to reach without a car"],
+      ["access", "Accessibility", 4, "Strollers, wheelchairs, stairs"],
+      ["kids", "Group & kid friendly", 3, "Works for mixed groups"],
+      ["fac", "Facilities", 2, "Washrooms, café, lockers"],
+    ],
+  },
+};
+
+export const CATEGORY_KEYS = Object.keys(CATEGORIES);

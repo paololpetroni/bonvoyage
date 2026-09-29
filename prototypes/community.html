@@ -1,0 +1,703 @@
+<title>Bonvoyage Community</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: left column is "you" (taste profile, weights, budget, learning status); right column is the whole city, searchable and ranked for you. */
+:root {
+  --bg: #f2f4f8; --surface: #ffffff; --ink: #151d36; --muted: #5a6380; --line: #dce0ea;
+  --accent: #2c49d4; --accent-soft: #e5eafc; --gold: #a8740b; --good: #2a7f52; --warn: #b0521c;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1321; --surface: #161d30; --ink: #e7eaf3; --muted: #97a0ba; --line: #283150;
+  --accent: #8fa3ff; --accent-soft: #1f2951; --gold: #e3b24a; --good: #5cc48b; --warn: #ef8a55; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e1321; --surface: #161d30; --ink: #e7eaf3; --muted: #97a0ba; --line: #283150;
+  --accent: #8fa3ff; --accent-soft: #1f2951; --gold: #e3b24a; --good: #5cc48b; --warn: #ef8a55; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: -0.02em; }
+h2 { font-size: 1.12rem; }
+h3 { font-size: 1.04rem; }
+.eyebrow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 600; }
+.muted { color: var(--muted); }
+.small { font-size: 0.8rem; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+button { font-family: var(--body); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px; }
+header p { margin: 6px 0 0; max-width: 64ch; color: var(--muted); }
+.account { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; border: 1px solid var(--line); background: var(--surface); padding: 6px 12px 6px 6px; border-radius: 999px; }
+.avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: var(--surface); display: grid; place-items: center; font-weight: 600; font-size: 0.8rem; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tab { font-weight: 600; font-size: 0.9rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab .c { font-family: var(--mono); font-size: 0.75rem; opacity: 0.7; margin-left: 4px; }
+
+.main { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.side { display: grid; gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.linkbtn { background: none; border: 0; color: var(--accent); font-weight: 600; font-size: 0.82rem; cursor: pointer; padding: 0; }
+
+.meter { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--good); }
+.toggle { display: flex; gap: 8px; align-items: flex-start; font-size: 0.86rem; }
+.toggle input { margin-top: 3px; accent-color: var(--accent); }
+
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.row label { font-size: 0.88rem; font-weight: 500; }
+.row .val { font-size: 0.76rem; color: var(--muted); text-align: right; }
+.row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); margin: 0; }
+.row .hint { grid-column: 1 / -1; font-size: 0.74rem; color: var(--muted); margin-top: -2px; }
+.row .learned { color: var(--good); font-weight: 600; }
+.scale { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-top: -2px; }
+details.fold > summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; list-style-position: outside; }
+details.fold[open] > summary { margin-bottom: 10px; }
+.stack { display: grid; gap: 12px; }
+
+.likeyou { display: grid; gap: 8px; }
+.peer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; font-size: 0.84rem; }
+.peer .m { font-family: var(--mono); color: var(--good); font-weight: 600; }
+.peer .why { grid-column: 1 / -1; font-size: 0.76rem; color: var(--muted); }
+
+.list { display: grid; gap: 12px; }
+.toolbar { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 640px) { .toolbar { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .toolbar .search { grid-column: 1 / -1; } }
+input[type=search], input[type=text], input[type=number], select { font: 500 0.9rem var(--body); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: 100%; min-width: 0; }
+.budget { display: grid; gap: 4px; }
+.budget-top { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; font-size: 0.88rem; }
+.list-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.notice { font-size: 0.86rem; background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; }
+.notice:empty { display: none; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 4px 14px; }
+.card.over { opacity: 0.6; }
+.rank { font-family: var(--display); font-size: 1.4rem; color: var(--muted); line-height: 1.1; }
+.meta { font-size: 0.83rem; color: var(--muted); }
+.score { text-align: right; }
+.score .lbl { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; display: block; }
+.score .big { font-family: var(--mono); font-size: 1.7rem; font-weight: 600; line-height: 1.05; }
+.score .of { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.score .comm { font-size: 0.76rem; color: var(--muted); display: block; margin-top: 2px; }
+.chips { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.chip { font-size: 0.76rem; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); }
+.chip.good::before { content: "▲ "; color: var(--good); }
+.chip.weak::before { content: "▼ "; color: var(--warn); }
+.chip.flag { background: transparent; border: 1px dashed var(--gold); color: var(--gold); }
+.chip.tag { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+.chip.mine { background: transparent; border: 1px solid var(--good); color: var(--good); }
+.chip.budgetchip { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+.actions { grid-column: 2 / -1; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+.btn { font-weight: 600; font-size: 0.86rem; background: var(--accent); color: var(--surface); border: 0; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.bars { display: grid; gap: 6px; margin-top: 8px; }
+.bar { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr) 2.6em; gap: 10px; align-items: center; font-size: 0.8rem; }
+.bar .track { height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--accent); border-radius: 4px; display: block; }
+.bar .v { font-family: var(--mono); text-align: right; color: var(--muted); }
+.card details { grid-column: 2 / -1; }
+.card details > summary { cursor: pointer; font-size: 0.82rem; color: var(--accent); font-weight: 600; }
+@media (max-width: 480px) { .card { grid-template-columns: 26px minmax(0, 1fr); } .score { grid-column: 2; text-align: left; } .chips, .actions, .card details, .rateform { grid-column: 1 / -1 !important; } }
+
+.rateform { grid-column: 2 / -1; border-top: 1px dashed var(--line); margin-top: 8px; padding-top: 12px; display: grid; gap: 12px; }
+.stars { font-family: var(--mono); color: var(--gold); font-size: 0.9rem; }
+.tagpick { display: flex; flex-wrap: wrap; gap: 6px; }
+.tagpick button { font-size: 0.8rem; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.tagpick button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.crit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 18px; margin-top: 8px; }
+.crit-grid .row input[type=range] { accent-color: var(--gold); }
+.na { font-size: 0.74rem; color: var(--muted); display: flex; gap: 6px; align-items: center; grid-column: 1 / -1; }
+.formrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; }
+.formrow label { font-size: 0.82rem; font-weight: 500; display: grid; gap: 4px; }
+.more { justify-self: center; }
+
+.method { font-size: 0.86rem; color: var(--muted); max-width: 80ch; display: grid; gap: 8px; }
+.method h2 { color: var(--ink); font-size: 1rem; }
+.method ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.method b { color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .bar .fill, .meter span { transition: width .3s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Bonvoyage · Community · Boston · simulated city of fictional places and travelers</div>
+      <h1>Every place in the city, ranked for you</h1>
+      <p>Rate anything you've been to. The more you rate, the more your list is shaped by travelers whose ratings line up with yours, and by the flavors and styles you keep scoring highly.</p>
+    </div>
+    <div class="account"><span class="avatar">P</span><span id="acct">Signed in · sample account</span></div>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Categories"></nav>
+
+  <div class="main">
+    <aside class="side">
+      <section class="panel" aria-labelledby="learn-title">
+        <div class="panel-head"><h2 id="learn-title">How well we know you</h2><button class="linkbtn" id="clearMine" type="button">Clear my ratings</button></div>
+        <div class="meter" aria-hidden="true"><span id="meterFill"></span></div>
+        <div class="small" id="meterText"></div>
+        <label class="toggle"><input type="checkbox" id="learnToggle" checked> <span>Learn from my ratings<br><span class="muted small">Tunes your taste and what-matters weights from how you actually rate.</span></span></label>
+        <div class="likeyou" id="likeYou"></div>
+      </section>
+
+      <section class="panel">
+        <details class="fold" open>
+          <summary id="tasteTitle">Your flavor profile</summary>
+          <div class="stack" id="tasteRows"></div>
+        </details>
+      </section>
+
+      <section class="panel">
+        <details class="fold" open>
+          <summary>What matters to you</summary>
+          <div class="stack" id="weightRows"></div>
+          <button class="linkbtn" id="resetW" type="button" style="justify-self:start;margin-top:8px">Reset to defaults</button>
+        </details>
+      </section>
+    </aside>
+
+    <section class="list" aria-labelledby="listTitle">
+      <div class="list-head"><h2 id="listTitle"></h2><span class="muted small" id="countText"></span></div>
+      <div class="toolbar">
+        <input class="search" type="search" id="q" placeholder="Search by name, type or neighbourhood" aria-label="Search places">
+        <select id="fType" aria-label="Type"></select>
+        <select id="fArea" aria-label="Neighbourhood"></select>
+        <select id="sort" aria-label="Sort">
+          <option value="you">Best for you</option>
+          <option value="comm">Community score</option>
+          <option value="most">Most rated</option>
+          <option value="unrated">Not yet rated</option>
+          <option value="mine">Places I rated</option>
+        </select>
+      </div>
+      <div class="budget">
+        <div class="budget-top"><span>Budget</span><span class="num" id="budgetLabel"></span></div>
+        <input type="range" id="budget" style="width:100%;accent-color:var(--accent)" aria-label="Budget">
+      </div>
+      <details class="panel fold" id="addBox">
+        <summary>Can't find a place? Add it</summary>
+        <div class="formrow">
+          <label>Name<input type="text" id="addName" maxlength="60"></label>
+          <label>Type<select id="addType"></select></label>
+          <label>Neighbourhood<select id="addArea"></select></label>
+          <label>Typical spend<input type="number" id="addSpend" min="0" step="1"></label>
+        </div>
+        <button class="btn" id="addBtn" type="button" style="justify-self:start">Add place</button>
+      </details>
+      <div class="notice" id="notice" role="status"></div>
+      <div id="cards" class="list"></div>
+      <button class="btn ghost more" id="more" type="button">Show more</button>
+    </section>
+  </div>
+
+  <section class="method">
+    <h2>How your score is built</h2>
+    <ol>
+      <li><b>Community baseline.</b> Everyone's overall stars, blended with the criterion scores weighted by your sliders. Places with few ratings are pulled toward the category average, so seven perfect reviews can't beat four hundred strong ones.</li>
+      <li><b>Taste match.</b> Raters tag what they experienced (spicy, sour, lively, historic). Tags add up to a profile for each place, matched against yours. Places nobody has rated yet use their type, the way a real import from a map database would know a restaurant is Thai.</li>
+      <li><b>Travelers like you.</b> Once you've rated places others have also rated, the app finds people whose ratings rise and fall with yours and predicts what you'd give a place from what they gave it. This carries more weight as your rating count grows, up to 75% at 15 ratings.</li>
+      <li><b>Learning.</b> With five or more detailed ratings in a category, the app checks which criteria move your overall score and tunes your weights. Your high and low ratings also nudge your flavor profile.</li>
+    </ol>
+    <p class="small">Your ratings stay in this browser only. In the real app they'd live in your account.</p>
+  </section>
+</div>
+
+<script>
+// LOGIC START
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rng = mulberry32(20260928);
+const pick = a => a[Math.floor(rng() * a.length)];
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const gauss = () => { let s = 0; for (let i = 0; i < 4; i++) s += rng(); return (s - 2) / 0.577; };
+const half = v => Math.round(v * 2) / 2;
+
+const AREAS = ["Back Bay","Beacon Hill","North End","South End","Seaport","Fenway","Cambridge","Somerville","Jamaica Plain","Dorchester","Allston","Chinatown","Downtown","Charlestown","East Boston","South Boston","Waterfront"];
+const ADJ = ["Salt","Copper","Little","Golden","Harbor","Red","Wild","Olive","Ember","Brick","Blue","Old","Iron","Saffron","Juniper","Lantern","Maple","Fig","Pepper","Tin","Anchor","Cedar","Fox","Lark","Sparrow","Tidewater","Northstar","Clover","Granite","Willow","Beacon","Driftwood","Marigold","Oak","Pilot","Quarry","Ridge","Signal","Thistle","Union"];
+
+const CATS = {
+  restaurants: { label: "Restaurants", unit: "per person", bMax: 150, tagTitle: "Your flavor profile",
+    dims: [["spicy","Spicy"],["umami","Savory / umami"],["fresh","Fresh & light"],["rich","Rich & hearty"],["sweet","Sweet"],["smoky","Smoky / grilled"],["tangy","Tangy / sour"]],
+    types: [
+      ["Italian",{rich:.7,umami:.6,tangy:.3},45,["Trattoria","Osteria","Cucina"]],
+      ["Thai",{spicy:.9,fresh:.6,sweet:.4,tangy:.6},32,["Thai Kitchen","Noodle Bar"]],
+      ["Mexican",{spicy:.7,smoky:.5,fresh:.4,tangy:.4},28,["Taqueria","Cantina"]],
+      ["Japanese",{umami:.9,fresh:.8},60,["Izakaya","Sushi Bar","Ramen"]],
+      ["BBQ",{smoky:1,rich:.7,sweet:.5},35,["Smokehouse","BBQ"]],
+      ["Seafood",{fresh:.8,umami:.5},70,["Oyster House","Fish Market","Raw Bar"]],
+      ["Vietnamese",{fresh:.8,tangy:.5,umami:.6,spicy:.3},22,["Pho House","Banh Mi"]],
+      ["Indian",{spicy:.8,rich:.7,umami:.4},34,["Curry House","Tandoor"]],
+      ["French",{rich:.9,umami:.5},85,["Bistro","Brasserie"]],
+      ["Bakery & café",{sweet:.9,rich:.4},16,["Bakery","Café","Pâtisserie"]],
+      ["Korean",{spicy:.7,umami:.7,tangy:.5,smoky:.4},38,["Korean BBQ","Kitchen"]],
+      ["Steakhouse",{rich:.8,smoky:.6,umami:.6},95,["Steakhouse","Chophouse"]],
+      ["Middle Eastern",{fresh:.6,tangy:.5,smoky:.4},30,["Grill","Mezze"]],
+      ["Pizza",{rich:.6,umami:.6,tangy:.3},20,["Pizzeria","Pizza Co."]]
+    ], count: 96, unrated: 0.25,
+    criteria: [["food","Food quality",10,"Taste, execution, freshness"],["value","Value for money",7,"Portions and quality for the price"],["local","Local character",6,"Authentic to the city or cuisine"],["service","Service",6,"Attentive, knowledgeable, friendly"],["atmos","Atmosphere",5,"Decor, lighting, energy"],["clean","Cleanliness",5,"Dining room and washrooms"],["wait","Wait & reservations",3,"Ease of getting a table"],["diet","Dietary options",3,"Vegetarian, gluten-free, allergies"]] },
+  bars: { label: "Bars & breweries", unit: "per evening", bMax: 120, tagTitle: "Your drinks profile",
+    dims: [["hoppy","Hoppy / bitter"],["sour","Sour & funky"],["malty","Malty / bready"],["roasty","Dark & roasty"],["spirit","Spirit-forward"],["fruity","Fruity / sweet"],["lively","Loud & lively"]],
+    types: [
+      ["Brewery taproom",{hoppy:.8,malty:.5,sour:.3,roasty:.4,lively:.6},32,["Brewing Co.","Taproom","Brewhouse"]],
+      ["Sour & wild ales",{sour:.9,fruity:.6},36,["Wild Ales","Barrel House"]],
+      ["Cocktail bar",{spirit:.9,fruity:.5},58,["Cocktail Room","Lounge"]],
+      ["Tiki bar",{fruity:.9,spirit:.6,lively:.7},48,["Tiki Room","Lagoon"]],
+      ["Irish pub",{roasty:.8,malty:.7,lively:.7},30,["Pub","Tavern"]],
+      ["Wine bar",{fruity:.4,sour:.4},55,["Wine Bar","Cellar"]],
+      ["Sports bar",{malty:.5,hoppy:.3,lively:1},28,["Sports Bar","Sports Pub"]],
+      ["Whiskey bar",{spirit:1,roasty:.3},62,["Whiskey Room","Still Bar"]]
+    ], count: 48, unrated: 0.25,
+    criteria: [["drinks","Drink quality",9,"Beer, cocktails, wine done well"],["vibe","Atmosphere & vibe",8,"Energy, music, look and feel"],["selection","Selection",7,"Range of taps, spirits, house specials"],["service","Service speed",6,"How fast you get a drink when busy"],["value","Value for money",6,"Price per drink for the quality"],["talk","Can you talk?",4,"Noise level for conversation"],["food","Food",3,"Bar snacks or kitchen quality"],["crowd","Crowd fit",3,"Welcoming to visitors and groups"]] },
+  hotels: { label: "Hotels", unit: "per night", bMax: 700, tagTitle: "Your hotel style",
+    dims: [["quiet","Quiet & calm"],["lively","Social & lively"],["luxury","Luxury"],["design","Design-forward"],["business","Business-ready"],["family","Family-friendly"],["budget","No-frills budget"]],
+    types: [
+      ["Boutique",{design:.9,quiet:.5,luxury:.5},320,["Hotel","House"]],
+      ["Business",{business:.9,quiet:.6},260,["Suites","Hotel & Conference"]],
+      ["Luxury",{luxury:1,quiet:.7,design:.4},520,["Grand Hotel","Plaza"]],
+      ["Budget",{budget:1,lively:.3},150,["Lodge","Inn","Motor Inn"]],
+      ["Family",{family:.9,lively:.5},230,["Family Suites","Resort Inn"]],
+      ["Hostel",{budget:1,lively:.9},60,["Hostel","Bunkhouse"]]
+    ], count: 36, unrated: 0.15,
+    criteria: [["comfort","Room comfort & bed",9,"Mattress, pillows, room size"],["clean","Cleanliness",8,"Room, bathroom, common areas"],["noise","Noise insulation",7,"Street, hallway and neighbour noise"],["service","Customer service",7,"Front desk, housekeeping, problem solving"],["sights","Proximity to sights",6,"Walkable to what you came to see"],["transit","Proximity to transit",5,"Subway, train, airport access"],["breakfast","Breakfast quality",5,"Free or paid, judged on quality",true],["value","Value for money",5,"Worth what you paid"],["wifi","Wi-Fi & workspace",2,"Speed, a desk you can work at"],["pool","Pool",2,"Cleanliness, hours, size",true],["gym","Gym",2,"Equipment and hours",true]] },
+  sports: { label: "Sports events", unit: "per ticket", bMax: 300, tagTitle: "Your game-day style",
+    dims: [["rowdy","Rowdy crowd"],["family","Family outing"],["premium","Premium experience"],["local","Local & niche"],["outdoors","Outdoors"]],
+    fixed: [
+      ["Pro baseball · bleachers","Riverside Ballpark","Baseball",{rowdy:.8,outdoors:1,family:.4},48],
+      ["Pro baseball · grandstand","Riverside Ballpark","Baseball",{family:.7,outdoors:1,premium:.4},85],
+      ["Pro hockey · upper bowl","Causeway Arena","Hockey",{rowdy:.9,premium:.3},95],
+      ["Pro hockey · lower bowl","Causeway Arena","Hockey",{rowdy:.7,premium:.9},240],
+      ["Pro basketball","Causeway Arena","Basketball",{rowdy:.6,premium:.7},130],
+      ["College hockey rivalry","Commonwealth Rink","Hockey",{rowdy:.8,local:.8},22],
+      ["College hockey","Charles River Rink","Hockey",{local:.9,family:.5},15],
+      ["College football","Heights Stadium","Football",{rowdy:.7,outdoors:.9,local:.6},40],
+      ["Pro soccer","Foxboro Stadium","Soccer",{rowdy:.8,outdoors:.9,local:.4},60],
+      ["Pro women's hockey","Tsongas Center","Hockey",{family:.8,local:.7},30],
+      ["Minor league baseball","Pawtucket Yards","Baseball",{family:.9,local:.7,outdoors:.8},18],
+      ["Head of the River regatta","Charles River banks","Rowing",{outdoors:1,family:.6,local:.8},0],
+      ["Pro lacrosse","Harbor Field","Lacrosse",{local:.8,outdoors:.8,family:.5},35],
+      ["Marathon finish line","Copley Square","Running",{outdoors:1,rowdy:.6,local:.5},0]
+    ], unrated: 0.1,
+    criteria: [["sight","Sightlines",9,"How well you see the play from typical seats"],["atmos","Crowd atmosphere",9,"Energy, chants, game-day feel"],["value","Ticket value",6,"Experience for the ticket price"],["transit","Getting there",5,"Transit, parking, getting home"],["conc","Food & drink",4,"Concession quality and prices"],["entry","Entry & lines",3,"Security, gates, washroom lines"],["fac","Facilities",3,"Washrooms, concourses, accessibility"],["seats","Seat comfort",2,"Legroom, backs, shade"]] },
+  sights: { label: "Tourist attractions", unit: "per person", bMax: 100, tagTitle: "Your sightseeing style",
+    dims: [["history","History"],["art","Art & design"],["nature","Nature & outdoors"],["science","Science"],["kids","Great with kids"],["adventure","Active & adventurous"],["food","Food-focused"]],
+    types: [
+      ["Historic site",{history:1},15,["Heritage Trail","Meeting House","Old Fort"]],
+      ["Art museum",{art:1,history:.3},30,["Museum of Art","Gallery","Craft Museum"]],
+      ["Park & garden",{nature:1,kids:.4},0,["Gardens","Arboretum","Island Park"]],
+      ["Science museum",{science:1,kids:.8},32,["Science Center","Planetarium"]],
+      ["Aquarium & zoo",{kids:1,science:.5,nature:.4},38,["Aquarium","Zoo"]],
+      ["Outdoor adventure",{adventure:1,nature:.7},55,["Harbor Kayaks","Whale Watch","Bike Tours"]],
+      ["Food tour & market",{food:1,history:.3},45,["Market Hall","Food Tour"]]
+    ], count: 32, unrated: 0.2,
+    criteria: [["exp","The experience itself",10,"Did it live up to the hype?"],["time","Time well spent",6,"Worth the hours it takes"],["value","Value for money",6,"Entry price for what you get"],["crowds","Crowds & wait",5,"Lines, crowding, booking ahead"],["guide","Guides & information",4,"Staff, signage, audio guide"],["transit","Proximity to transit",4,"Easy to reach without a car"],["access","Accessibility",4,"Strollers, wheelchairs, stairs"],["kids","Group & kid friendly",3,"Works for mixed groups"],["fac","Facilities",2,"Washrooms, café, lockers"]] }
+};
+
+// ---------- Build the city ----------
+const PLACES = []; const BYID = {};
+function makeVec(cat, base) { const v = {}; for (const [d] of cat.dims) v[d] = clamp((base[d] || 0) + (rng() - 0.5) * 0.3 * ((base[d] || 0) > 0 ? 1 : 0.5), 0, 1); return v; }
+function makeQuality(cat) { const base = 2.9 + rng() * 1.8; const q = {}; for (const c of cat.criteria) q[c[0]] = clamp(base + (rng() - 0.5) * 1.4, 1.5, 5); return q; }
+function addPlace(p) { PLACES.push(p); BYID[p.id] = p; }
+for (const [ck, cat] of Object.entries(CATS)) {
+  if (cat.fixed) {
+    cat.fixed.forEach((f, i) => addPlace({ id: ck + i, cat: ck, name: f[0], area: f[1], type: f[2], base: f[3], vec: makeVec(cat, f[3]), q: makeQuality(cat), spend: f[4], pop: rng() < cat.unrated ? 0 : 0.2 + rng() * 0.8 }));
+    cat.typeNames = [...new Set(cat.fixed.map(f => f[2]))];
+    cat.typeBase = Object.fromEntries(cat.fixed.map(f => [f[2], f[3]]));
+    continue;
+  }
+  cat.typeNames = cat.types.map(t => t[0]); cat.typeBase = Object.fromEntries(cat.types.map(t => [t[0], t[1]]));
+  const used = new Set();
+  for (let i = 0; i < cat.count; i++) {
+    const t = pick(cat.types); let name, tries = 0;
+    do { name = pick(ADJ) + " " + pick(t[3]); tries++; } while (used.has(name) && tries < 20);
+    if (used.has(name)) name += " " + (i + 2);
+    used.add(name);
+    const p = { id: ck + i, cat: ck, name, area: pick(AREAS), type: t[0], base: t[1], vec: makeVec(cat, t[1]), q: makeQuality(cat), spend: Math.max(0, Math.round(t[2] * (0.6 + rng() * 0.9))), pop: rng() < cat.unrated ? 0 : Math.pow(rng(), 1.6) };
+    if (ck === "hotels") { p.has = { pool: rng() < (t[0] === "Luxury" || t[0] === "Family" ? 0.8 : 0.3), gym: t[0] !== "Hostel" && rng() < 0.75, breakfast: rng() < 0.7 }; }
+    addPlace(p);
+  }
+}
+
+// ---------- Ratings store ----------
+let cache = {};
+function dirty() { cache = {}; }
+const R = {};            // placeId -> Map(userId -> rating)
+const UR = {};           // userId -> Map(placeId -> overall)
+function putRating(uid, pid, rating) {
+  (R[pid] ||= new Map()).set(uid, rating);
+  (UR[uid] ||= new Map()).set(pid, rating.overall);
+  dirty();
+}
+function removeRatingsOf(uid) { for (const pid of (UR[uid] ? [...UR[uid].keys()] : [])) R[pid].delete(uid); UR[uid] = new Map(); dirty(); }
+
+function tasteMatch(pref, vec, cat) {
+  let num = 0, den = 0;
+  for (const [d] of cat.dims) { const w = pref[d] || 0; num += w * (vec[d] || 0); den += Math.abs(w); }
+  return den ? num / den : 0;
+}
+function simulateRating(p, pref, bias, noise) {
+  const cat = CATS[p.cat];
+  const qAvg = cat.criteria.reduce((s, c) => s + p.q[c[0]], 0) / cat.criteria.length;
+  const overall = clamp(half(qAvg + 0.9 * tasteMatch(pref, p.vec, cat) + bias + gauss() * noise), 1, 5);
+  const crit = {};
+  for (const c of cat.criteria) { if (c[4] && p.has && !p.has[c[0]]) { crit[c[0]] = null; continue; } crit[c[0]] = clamp(half(p.q[c[0]] + (overall - qAvg) * 0.4 + gauss() * 0.4), 1, 5); }
+  const tags = cat.dims.map(d => d[0]).filter(d => rng() < p.vec[d] * 0.85);
+  return { overall, crit, tags, spend: Math.round(p.spend * (0.8 + rng() * 0.4)) };
+}
+const randPref = cat => Object.fromEntries(cat.dims.map(([d]) => [d, pick([-2, -1, 0, 0, 1, 1, 2])]));
+
+// 90 simulated travelers
+const SIMS = [];
+for (let u = 1; u <= 90; u++) {
+  const id = "traveler_" + String(u).padStart(2, "0");
+  const prefs = Object.fromEntries(Object.entries(CATS).map(([k, c]) => [k, randPref(c)]));
+  const bias = (rng() - 0.5) * 0.7; const activity = 0.08 + rng() * 0.22;
+  SIMS.push({ id, prefs, bias });
+  for (const p of PLACES) if (p.pop > 0 && rng() < activity * (0.35 + p.pop * 1.6)) putRating(id, p.id, simulateRating(p, prefs[p.cat], bias, 0.35));
+}
+
+// You: a sample persona with some ratings already in
+const ME = "you";
+const PERSONA = {
+  restaurants: { spicy: 2, umami: 1, fresh: 1, rich: 0, sweet: -2, smoky: 2, tangy: 1 },
+  bars: { hoppy: 1, sour: 2, malty: 0, roasty: 1, spirit: 0, fruity: -1, lively: 0 },
+  hotels: { quiet: 2, lively: -1, luxury: 0, design: 1, business: 0, family: -1, budget: 0 },
+  sports: { rowdy: 2, family: -1, premium: 0, local: 1, outdoors: 1 },
+  sights: { history: 2, art: 0, nature: 1, science: 0, kids: -1, adventure: 1, food: 2 }
+};
+function seedMine() {
+  const r2 = mulberry32(77);
+  const pool = (ck, n) => PLACES.filter(p => p.cat === ck && p.pop > 0.15).sort(() => r2() - 0.5).slice(0, n);
+  for (const p of [...pool("restaurants", 18), ...pool("bars", 5)]) putRating(ME, p.id, simulateRating(p, PERSONA[p.cat], 0, 0.2));
+}
+
+// ---------- Aggregates & learning ----------
+function agg(p) {
+  const key = "a" + p.id; if (cache[key]) return cache[key];
+  const cat = CATS[p.cat]; const rs = R[p.id] ? [...R[p.id].values()] : [];
+  const a = { n: rs.length, overall: 0, crit: {}, tagFreq: {}, spend: p.spend };
+  if (rs.length) {
+    a.overall = rs.reduce((s, r) => s + r.overall, 0) / rs.length;
+    for (const c of cat.criteria) { const vs = rs.map(r => r.crit && r.crit[c[0]]).filter(v => v != null); a.crit[c[0]] = vs.length ? vs.reduce((s, v) => s + v, 0) / vs.length : null; }
+    for (const [d] of cat.dims) a.tagFreq[d] = rs.filter(r => r.tags && r.tags.includes(d)).length / rs.length;
+    const sp = rs.map(r => r.spend).filter(v => v != null && v !== "");
+    if (sp.length) a.spend = sp.reduce((s, v) => s + +v, 0) / sp.length;
+  }
+  // Tag profile: community tags once there are enough, otherwise the place type (what a map import would tell us)
+  const baseVec = Object.fromEntries(cat.dims.map(([d]) => [d, (cat.typeBase[p.type] || {})[d] || 0]));
+  const k = Math.min(1, a.n / 5);
+  a.vec = Object.fromEntries(cat.dims.map(([d]) => [d, k * (a.tagFreq[d] || 0) / 0.85 + (1 - k) * baseVec[d]]));
+  return (cache[key] = a);
+}
+function catMean(ck) {
+  const key = "m" + ck; if (cache[key] != null) return cache[key];
+  const rated = PLACES.filter(p => p.cat === ck && agg(p).n);
+  return (cache[key] = rated.length ? rated.reduce((s, p) => s + agg(p).overall, 0) / rated.length : 3.8);
+}
+function userMean(uid) {
+  const key = "u" + uid; if (cache[key] != null) return cache[key];
+  const m = UR[uid]; if (!m || !m.size) return (cache[key] = 3.8);
+  let s = 0; for (const v of m.values()) s += v; return (cache[key] = s / m.size);
+}
+function pearson(xs, ys) {
+  const n = xs.length; if (n < 3) return 0;
+  const mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
+  let sxy = 0, sxx = 0, syy = 0;
+  for (let i = 0; i < n; i++) { const dx = xs[i] - mx, dy = ys[i] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+  return sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0;
+}
+// Similarity to each traveler: mean-centred agreement on places you've both rated, shrunk when the overlap is small
+function neighbours() {
+  if (cache.nb) return cache.nb;
+  const mine = UR[ME] || new Map(); const myM = userMean(ME); const out = [];
+  for (const s of SIMS) {
+    const theirs = UR[s.id]; if (!theirs) continue;
+    const co = [...mine.keys()].filter(pid => theirs.has(pid));
+    if (co.length < 3) continue;
+    const tm = userMean(s.id);
+    let num = 0, a2 = 0, b2 = 0;
+    for (const pid of co) { const a = mine.get(pid) - myM, b = theirs.get(pid) - tm; num += a * b; a2 += a * a; b2 += b * b; }
+    const r = a2 && b2 ? num / Math.sqrt(a2 * b2) : 0;
+    const sim = r * co.length / (co.length + 5);
+    if (sim > 0) out.push({ id: s.id, sim, r, overlap: co.length, co });
+  }
+  out.sort((a, b) => b.sim - a.sim);
+  return (cache.nb = out);
+}
+function predictCF(p) {
+  const nb = neighbours().filter(x => R[p.id] && R[p.id].has(x.id)).slice(0, 20);
+  if (nb.length < 2) return null;
+  let num = 0, den = 0, raw = 0;
+  for (const x of nb) { const r = R[p.id].get(x.id).overall; num += x.sim * (r - userMean(x.id)); den += x.sim; raw += r; }
+  return { value: userMean(ME) + num / den, conf: Math.min(1, den / 1.2), count: nb.length, avg: raw / nb.length };
+}
+function myRatingsIn(ck) { const m = UR[ME]; return m ? [...m.keys()].filter(pid => BYID[pid] && BYID[pid].cat === ck).map(pid => ({ p: BYID[pid], r: R[pid].get(ME) })) : []; }
+// Which criteria actually move your overall score in this category
+function learnedWeights(ck) {
+  const key = "lw" + ck; if (key in cache) return cache[key];
+  const mine = myRatingsIn(ck).filter(x => x.r.crit); if (mine.length < 5) return (cache[key] = null);
+  const out = {};
+  for (const c of CATS[ck].criteria) {
+    const pairs = mine.filter(x => x.r.crit[c[0]] != null);
+    out[c[0]] = pairs.length >= 5 ? Math.max(0, pearson(pairs.map(x => x.r.crit[c[0]]), pairs.map(x => x.r.overall))) : null;
+  }
+  return (cache[key] = out);
+}
+// What your ratings say about your taste: compare how you rated each place with how everyone else did,
+// then see which flavors show up where you rate above the crowd and where you rate below it
+function learnedTaste(ck) {
+  const key = "lt" + ck; if (key in cache) return cache[key];
+  const mine = myRatingsIn(ck); if (mine.length < 4) return (cache[key] = null);
+  const rows = mine.map(x => {
+    const others = [...R[x.p.id].entries()].filter(([u]) => u !== ME).map(([, r]) => r.overall);
+    const crowd = others.length ? others.reduce((a, b) => a + b, 0) / others.length : userMean(ME);
+    const v = agg(x.p).vec;
+    const tagged = Object.fromEntries(CATS[ck].dims.map(([d]) => [d, x.r.tags && x.r.tags.length ? (x.r.tags.includes(d) ? 1 : 0) * 0.5 + v[d] * 0.5 : v[d]]));
+    return { res: x.r.overall - crowd, tagged };
+  });
+  const meanRes = rows.reduce((s, r) => s + r.res, 0) / rows.length;
+  const out = {};
+  for (const [d] of CATS[ck].dims) {
+    let num = 0, den = 0; for (const r of rows) { num += r.res * r.tagged[d]; den += r.tagged[d]; }
+    out[d] = den > 0.5 ? clamp((num / den - meanRes) * 3, -2, 2) : 0;
+  }
+  return (cache[key] = out);
+}
+
+const ST = { cat: "restaurants", learn: true, prefs: JSON.parse(JSON.stringify(PERSONA)), weights: {}, budget: {} };
+for (const [k, c] of Object.entries(CATS)) { ST.weights[k] = Object.fromEntries(c.criteria.map(x => [x[0], x[2]])); ST.budget[k] = c.bMax; }
+
+function effPrefs(ck) {
+  const d = ST.prefs[ck]; const lt = ST.learn ? learnedTaste(ck) : null;
+  return Object.fromEntries(CATS[ck].dims.map(([k]) => [k, clamp((d[k] || 0) + (lt ? lt[k] * 0.8 : 0), -2, 2)]));
+}
+function effWeights(ck) {
+  const cat = CATS[ck], w = ST.weights[ck], lw = ST.learn ? learnedWeights(ck) : null;
+  const tot = cat.criteria.reduce((s, c) => s + w[c[0]], 0) || 1;
+  const out = Object.fromEntries(cat.criteria.map(c => [c[0], w[c[0]] / tot]));
+  if (lw) {
+    const lt = cat.criteria.reduce((s, c) => s + (lw[c[0]] ?? out[c[0]]), 0) || 1;
+    for (const c of cat.criteria) out[c[0]] = 0.5 * out[c[0]] + 0.5 * (lw[c[0]] ?? out[c[0]]) / lt;
+  }
+  return out;
+}
+const PRIOR = 5;
+function scorePlace(p) {
+  const cat = CATS[p.cat], a = agg(p), mean = catMean(p.cat), w = effWeights(p.cat), pref = effPrefs(p.cat);
+  let base;
+  if (a.n) {
+    let cs = 0, cw = 0;
+    for (const c of cat.criteria) { if (w[c[0]] === 0) continue; const v = a.crit[c[0]]; const missing = c[4] && p.has && !p.has[c[0]]; if (v == null && !missing) continue; cs += w[c[0]] * (missing ? 1 : v); cw += w[c[0]]; }
+    const comm = cw ? 0.5 * a.overall + 0.5 * cs / cw : a.overall;
+    base = (a.n * comm + PRIOR * mean) / (a.n + PRIOR);
+  } else base = mean - 0.15;
+  const match = tasteMatch(pref, a.vec, cat);
+  const content = base + 0.7 * match;
+  const cf = predictCF(p);
+  const myCount = UR[ME] ? UR[ME].size : 0;
+  const alpha = cf ? Math.min(0.75, myCount / 15 * 0.75) * cf.conf : 0;
+  const final = clamp(alpha > 0 ? alpha * cf.value + (1 - alpha) * content : content, 1, 5);
+  return { p, a, base, match, pref, cf, alpha, final, over: a.spend > ST.budget[p.cat] };
+}
+// LOGIC END
+
+// ---------- Storage (this browser only) ----------
+const KEY = "bonvoyage-community-v2";
+function save() {
+  try {
+    const mine = {}; if (UR[ME]) for (const pid of UR[ME].keys()) mine[pid] = R[pid].get(ME);
+    const added = PLACES.filter(p => p.userAdded).map(p => ({ id: p.id, cat: p.cat, name: p.name, area: p.area, type: p.type, spend: p.spend }));
+    localStorage.setItem(KEY, JSON.stringify({ mine, added, prefs: ST.prefs, weights: ST.weights, learn: ST.learn }));
+  } catch (e) {}
+}
+function load() {
+  let s = null; try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (!s) { seedMine(); return; }
+  for (const a of s.added || []) addUserPlace(a);
+  for (const [pid, r] of Object.entries(s.mine || {})) if (BYID[pid]) putRating(ME, pid, r);
+  if (s.prefs) ST.prefs = s.prefs; if (s.weights) ST.weights = s.weights; if (typeof s.learn === "boolean") ST.learn = s.learn;
+}
+function addUserPlace(a) {
+  const cat = CATS[a.cat]; const base = cat.typeBase[a.type] || {};
+  const p = { id: a.id, cat: a.cat, name: a.name, area: a.area, type: a.type, base, vec: makeVec(cat, base), q: {}, spend: +a.spend || 0, pop: 0, userAdded: true };
+  if (a.cat === "hotels") p.has = { pool: true, gym: true, breakfast: true };
+  addPlace(p); return p;
+}
+
+// ---------- UI ----------
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const ten = v => (v * 2).toFixed(1);
+const money = v => v === 0 ? "Free" : "$" + Math.round(v);
+const starStr = v => "★".repeat(Math.floor(v)) + (v % 1 ? "½" : "") + "☆".repeat(5 - Math.ceil(v));
+const PREF_WORD = { "-2": "Avoid", "-1": "Not for me", "0": "Neutral", "1": "Like", "2": "Love" };
+let shown = 24, openForm = null;
+
+function renderTabs() {
+  $("tabs").innerHTML = Object.entries(CATS).map(([k, c]) => `<button class="tab" role="tab" type="button" aria-selected="${k === ST.cat}" data-k="${k}">${c.label}<span class="c">${PLACES.filter(p => p.cat === k).length}</span></button>`).join("");
+  $("tabs").querySelectorAll(".tab").forEach(b => b.onclick = () => { ST.cat = b.dataset.k; shown = 24; openForm = null; $("q").value = ""; renderAll(); });
+}
+
+function renderSide() {
+  const ck = ST.cat, cat = CATS[ck];
+  const count = UR[ME] ? UR[ME].size : 0, inCat = myRatingsIn(ck).length;
+  const pct = Math.min(100, Math.round(count / 15 * 100));
+  $("meterFill").style.width = pct + "%";
+  $("meterText").innerHTML = count >= 15
+    ? `You've rated <b>${count}</b> places. Travelers like you now carry full weight in your recommendations.`
+    : `You've rated <b>${count}</b> place${count === 1 ? "" : "s"}. Rate <b>${15 - count}</b> more for full-strength matching with travelers like you.`;
+  $("learnToggle").checked = ST.learn;
+  const nb = neighbours().slice(0, 4);
+  $("likeYou").innerHTML = nb.length ? `<div class="eyebrow">Travelers most like you</div>` + nb.map(x => {
+    const both = x.co.filter(pid => R[pid].get(ME).overall >= 4 && R[pid].get(x.id).overall >= 4).map(pid => BYID[pid].name);
+    return `<div class="peer"><span>${x.id}</span><span class="m">${Math.round(x.r * 100)}% agree</span><span class="why">${x.overlap} places in common${both.length ? " · you both loved " + esc(both.slice(0, 2).join(" and ")) : ""}</span></div>`;
+  }).join("") : `<div class="muted small">Rate a few places other travelers have rated and your closest matches will show up here.</div>`;
+
+  $("tasteTitle").textContent = cat.tagTitle;
+  const lt = ST.learn ? learnedTaste(ck) : null;
+  $("tasteRows").innerHTML = cat.dims.map(([d, l]) => {
+    const v = ST.prefs[ck][d] || 0, L = lt ? lt[d] : 0;
+    const learnedTxt = lt && Math.abs(L) >= 0.4 ? ` <span class="learned">· ratings say ${L > 0 ? "+" : ""}${L.toFixed(1)}</span>` : "";
+    return `<div class="row"><label for="t-${d}">${l}</label><span class="val"><span id="tv-${d}">${PREF_WORD[v]}</span>${learnedTxt}</span>
+      <input type="range" id="t-${d}" min="-2" max="2" step="1" value="${v}" data-d="${d}"><div class="scale"><span>Avoid</span><span>Love</span></div></div>`;
+  }).join("") + (lt ? "" : `<div class="muted small">Rate ${Math.max(0, 4 - inCat)} more ${cat.label.toLowerCase()} and your ratings start adjusting this profile.</div>`);
+  $("tasteRows").querySelectorAll("input").forEach(inp => inp.oninput = () => { ST.prefs[ck][inp.dataset.d] = +inp.value; $("tv-" + inp.dataset.d).textContent = PREF_WORD[inp.value]; save(); dirty(); renderList(); });
+
+  const w = ST.weights[ck], tot = cat.criteria.reduce((s, c) => s + w[c[0]], 0) || 1, lw = ST.learn ? learnedWeights(ck) : null;
+  const lvals = lw ? Object.values(lw).filter(v => v != null) : [];
+  const lmean = lvals.length ? lvals.reduce((a, b) => a + b, 0) / lvals.length : 0;
+  $("weightRows").innerHTML = cat.criteria.map(c => {
+    const lv = lw ? lw[c[0]] : null;
+    const l = lv != null && Math.abs(lv - lmean) > 0.06 ? ` <span class="learned">· your ratings: matters ${lv > lmean ? "more" : "less"} to you</span>` : "";
+    return `<div class="row"><label for="w-${c[0]}">${c[1]}</label><span class="val num" id="wp-${c[0]}">${Math.round(w[c[0]] / tot * 100)}%</span>
+      <input type="range" id="w-${c[0]}" min="0" max="10" step="1" value="${w[c[0]]}" data-k="${c[0]}"><span class="hint">${c[3]}${l}</span></div>`;
+  }).join("") + (lw ? "" : `<div class="muted small">After 5 detailed ratings in this category, your ratings start tuning these weights.</div>`);
+  $("weightRows").querySelectorAll("input").forEach(inp => inp.oninput = () => {
+    w[inp.dataset.k] = +inp.value; const t = cat.criteria.reduce((s, c) => s + w[c[0]], 0) || 1;
+    cat.criteria.forEach(c => $("wp-" + c[0]).textContent = Math.round(w[c[0]] / t * 100) + "%"); save(); renderList();
+  });
+}
+$("learnToggle").onchange = e => { ST.learn = e.target.checked; save(); dirty(); renderSide(); renderList(); };
+$("resetW").onclick = () => { CATS[ST.cat].criteria.forEach(c => ST.weights[ST.cat][c[0]] = c[2]); save(); renderSide(); renderList(); };
+$("clearMine").onclick = () => { removeRatingsOf(ME); save(); flash("Cleared your ratings. Recommendations now rely on the community and your profile."); renderAll(); };
+
+function renderFilters() {
+  const cat = CATS[ST.cat];
+  $("fType").innerHTML = `<option value="">All types</option>` + cat.typeNames.map(t => `<option>${esc(t)}</option>`).join("");
+  const areas = [...new Set(PLACES.filter(p => p.cat === ST.cat).map(p => p.area))].sort();
+  $("fArea").innerHTML = `<option value="">All areas</option>` + areas.map(a => `<option>${esc(a)}</option>`).join("");
+  $("addType").innerHTML = cat.typeNames.map(t => `<option>${esc(t)}</option>`).join("");
+  $("addArea").innerHTML = AREAS.map(a => `<option>${esc(a)}</option>`).join("");
+  const b = $("budget"); b.min = 0; b.max = cat.bMax; b.step = cat.bMax > 200 ? 10 : 5; b.value = ST.budget[ST.cat]; budgetText();
+}
+function budgetText() { const v = ST.budget[ST.cat], c = CATS[ST.cat]; $("budgetLabel").textContent = v >= c.bMax ? "any" : "up to $" + v + " " + c.unit; }
+$("budget").oninput = e => { ST.budget[ST.cat] = +e.target.value; budgetText(); renderList(); };
+["q", "fType", "fArea", "sort"].forEach(id => $(id).addEventListener(id === "q" ? "input" : "change", () => { shown = 24; renderList(); }));
+$("more").onclick = () => { shown += 24; renderList(); };
+
+function reasons(s) {
+  const cat = CATS[s.p.cat], out = [];
+  const hits = cat.dims.filter(([d]) => s.pref[d] > 0.5 && s.a.vec[d] >= 0.45).sort((x, y) => s.pref[y[0]] * s.a.vec[y[0]] - s.pref[x[0]] * s.a.vec[x[0]]).slice(0, 2);
+  const clash = cat.dims.filter(([d]) => s.pref[d] < -0.5 && s.a.vec[d] >= 0.45).slice(0, 1);
+  if (hits.length) out.push(`<span class="chip good">Your taste: ${hits.map(h => h[1].toLowerCase()).join(", ")}</span>`);
+  if (clash.length) out.push(`<span class="chip weak">Leans ${clash[0][1].toLowerCase()}, which you avoid</span>`);
+  if (s.cf && s.alpha > 0.15) out.push(`<span class="chip ${s.cf.avg >= 3.9 ? "good" : s.cf.avg < 3.2 ? "weak" : ""}">${s.cf.count} travelers like you avg ${ten(s.cf.avg)}</span>`);
+  if (!s.a.n) out.push(`<span class="chip flag">Not yet rated · scored from its type</span>`);
+  else if (s.a.n < 5) out.push(`<span class="chip flag">Only ${s.a.n} rating${s.a.n > 1 ? "s" : ""} · pulled toward average</span>`);
+  if (s.over) out.push(`<span class="chip budgetchip">Over your budget</span>`);
+  return out.join("");
+}
+
+function renderList() {
+  const ck = ST.cat, cat = CATS[ck];
+  const q = $("q").value.trim().toLowerCase(), ft = $("fType").value, fa = $("fArea").value, sort = $("sort").value;
+  let list = PLACES.filter(p => p.cat === ck && (!ft || p.type === ft) && (!fa || p.area === fa) && (!q || (p.name + " " + p.type + " " + p.area).toLowerCase().includes(q))).map(scorePlace);
+  if (sort === "unrated") list = list.filter(s => !s.a.n);
+  if (sort === "mine") list = list.filter(s => R[s.p.id] && R[s.p.id].has(ME));
+  const cmp = { you: (a, b) => b.final - a.final, comm: (a, b) => (b.a.n ? b.base : 0) - (a.a.n ? a.base : 0), most: (a, b) => b.a.n - a.a.n, unrated: (a, b) => b.final - a.final, mine: (a, b) => R[b.p.id].get(ME).overall - R[a.p.id].get(ME).overall }[sort];
+  list.sort((a, b) => (a.over - b.over) || cmp(a, b));
+  const total = PLACES.filter(p => p.cat === ck).length, rated = PLACES.filter(p => p.cat === ck && agg(p).n).length;
+  $("listTitle").textContent = cat.label + " in Boston";
+  $("countText").textContent = `${list.length} shown · ${rated} of ${total} rated by the community`;
+  $("cards").innerHTML = list.length ? list.slice(0, shown).map((s, i) => card(s, i)).join("") : `<div class="panel muted">No places match. Try clearing the search or filters, or add the place yourself.</div>`;
+  $("more").hidden = list.length <= shown;
+  $("cards").querySelectorAll("[data-rate]").forEach(b => b.onclick = () => { openForm = openForm === b.dataset.rate ? null : b.dataset.rate; renderList(); if (openForm) { const f = $("rf-" + openForm); if (f) f.scrollIntoView({ block: "nearest" }); } });
+  if (openForm && $("rf-" + openForm)) wireForm(BYID[openForm]);
+}
+
+function card(s, i) {
+  const p = s.p, cat = CATS[p.cat], mine = R[p.id] && R[p.id].get(ME);
+  const topTags = cat.dims.filter(([d]) => s.a.vec[d] >= 0.45).sort((x, y) => s.a.vec[y[0]] - s.a.vec[x[0]]).slice(0, 3).map(d => `<span class="chip tag">${d[1]}</span>`).join("");
+  const bars = s.a.n ? cat.criteria.map(c => { const v = s.a.crit[c[0]]; return `<div class="bar"><span>${c[1]}</span><span class="track"><span class="fill" style="width:${v == null ? 0 : v / 5 * 100}%"></span></span><span class="v">${v == null ? "none" : v.toFixed(1)}</span></div>`; }).join("") : "";
+  return `<article class="card${s.over ? " over" : ""}">
+    <div class="rank">${i + 1}</div>
+    <div style="min-width:0"><h3>${esc(p.name)}</h3><div class="meta">${esc(p.type)} · ${esc(p.area)} · <span class="num">${money(s.a.spend)}</span>${s.a.spend ? " " + cat.unit : ""}${p.userAdded ? " · added by you" : ""}</div></div>
+    <div class="score"><span class="lbl">For you</span><span class="big">${ten(s.final)}</span><span class="of">/10</span>
+      <span class="comm">${s.a.n ? `Community ${ten(s.base)} · ${s.a.n} rating${s.a.n > 1 ? "s" : ""}` : "No ratings yet"}</span></div>
+    <div class="chips">${mine ? `<span class="chip mine">You rated ${ten(mine.overall)}</span>` : ""}${reasons(s)}${topTags}</div>
+    <div class="actions"><button class="btn${mine ? " ghost" : ""}" type="button" data-rate="${p.id}">${openForm === p.id ? "Close" : mine ? "Edit my rating" : s.a.n ? "Rate it" : "Be the first to rate"}</button></div>
+    ${bars ? `<details><summary>Community breakdown</summary><div class="bars">${bars}</div></details>` : ""}
+    ${openForm === p.id ? rateForm(p, mine) : ""}
+  </article>`;
+}
+
+function rateForm(p, mine) {
+  const cat = CATS[p.cat], ov = mine ? mine.overall : 4, tags = mine && mine.tags ? mine.tags : [];
+  const crit = cat.criteria.map(c => {
+    const v = mine && mine.crit ? mine.crit[c[0]] : undefined, na = v === null;
+    return `<div class="row"><label for="rc-${c[0]}">${c[1]}</label><span class="val stars" id="rcv-${c[0]}">${na ? "none" : v == null ? "skip" : v.toFixed(1)}</span>
+      <input type="range" id="rc-${c[0]}" min="0" max="5" step="0.5" value="${v == null ? 0 : v}" data-k="${c[0]}"${na ? " disabled" : ""}>
+      ${c[4] ? `<label class="na"><input type="checkbox" id="rcn-${c[0]}" data-k="${c[0]}"${na ? " checked" : ""}> Doesn't have one</label>` : ""}</div>`;
+  }).join("");
+  return `<div class="rateform" id="rf-${p.id}">
+    <div class="row"><label for="rOverall">Overall</label><span class="val stars" id="rOverallV">${starStr(ov)} ${ov.toFixed(1)}</span><input type="range" id="rOverall" min="1" max="5" step="0.5" value="${ov}"></div>
+    <div><div class="small" style="font-weight:600;margin-bottom:6px">${p.cat === "restaurants" || p.cat === "bars" ? "What did it taste like?" : "What was it like?"} <span class="muted" style="font-weight:400">Tap all that apply</span></div>
+      <div class="tagpick">${cat.dims.map(([d, l]) => `<button type="button" data-tag="${d}" aria-pressed="${tags.includes(d)}">${l}</button>`).join("")}</div></div>
+    <details><summary>Rate the details (optional, helps tune your weights)</summary><div class="crit-grid">${crit}</div></details>
+    <div class="formrow"><label>What you spent (${cat.unit})<input type="number" id="rSpend" min="0" step="1" value="${mine && mine.spend != null ? mine.spend : ""}"></label>
+      <button class="btn" type="button" id="rSubmit">${mine ? "Update rating" : "Submit rating"}</button></div>
+  </div>`;
+}
+
+function wireForm(p) {
+  const cat = CATS[p.cat];
+  $("rOverall").oninput = e => { const v = +e.target.value; $("rOverallV").textContent = starStr(v) + " " + v.toFixed(1); };
+  document.querySelectorAll(`#rf-${p.id} [data-tag]`).forEach(b => b.onclick = () => b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true"));
+  cat.criteria.forEach(c => {
+    $("rc-" + c[0]).oninput = e => { $("rcv-" + c[0]).textContent = +e.target.value ? (+e.target.value).toFixed(1) : "skip"; };
+    const n = $("rcn-" + c[0]); if (n) n.onchange = () => { $("rc-" + c[0]).disabled = n.checked; $("rcv-" + c[0]).textContent = n.checked ? "none" : "skip"; };
+  });
+  $("rSubmit").onclick = () => {
+    const crit = {}; let any = false;
+    for (const c of cat.criteria) { const n = $("rcn-" + c[0]); if (n && n.checked) { crit[c[0]] = null; any = true; continue; } const v = +$("rc-" + c[0]).value; if (v >= 1) { crit[c[0]] = v; any = true; } }
+    const tags = [...document.querySelectorAll(`#rf-${p.id} [data-tag]`)].filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.tag);
+    const sp = $("rSpend").value;
+    const before = UR[ME] ? UR[ME].size : 0;
+    putRating(ME, p.id, { overall: +$("rOverall").value, crit: any ? crit : null, tags, spend: sp === "" ? null : +sp });
+    save(); openForm = null;
+    const nb = neighbours().length;
+    flash(`Saved your rating for ${p.name}.` + (UR[ME].size > before ? ` You've rated ${UR[ME].size} places` + (nb ? `, and ${nb} travelers now look like you.` : ".") : " Your list has been updated."));
+    renderSide(); renderList();
+  };
+}
+
+$("addBtn").onclick = () => {
+  const name = $("addName").value.trim();
+  if (!name) { flash("Add a name for the place first."); $("addName").focus(); return; }
+  const p = addUserPlace({ id: "u" + Date.now(), cat: ST.cat, name, area: $("addArea").value, type: $("addType").value, spend: $("addSpend").value });
+  dirty(); save(); $("addName").value = ""; $("addSpend").value = ""; $("addBox").open = false;
+  openForm = p.id; $("q").value = name; $("sort").value = "you"; renderTabs(); renderFilters(); renderList();
+  flash(`Added ${name}. Rate it now so others can find it.`);
+};
+
+let flashT; function flash(msg) { $("notice").textContent = msg; clearTimeout(flashT); flashT = setTimeout(() => $("notice").textContent = "", 6000); }
+function renderAll() { renderTabs(); renderSide(); renderFilters(); renderList(); }
+load(); renderAll();
+</script>
