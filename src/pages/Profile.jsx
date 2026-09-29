@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.jsx";
 import { deleteAllMyPhotos } from "../lib/photos.js";
+import TasteProfile from "../components/TasteProfile.jsx";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -76,10 +77,7 @@ export default function Profile() {
         {msg && <p className="msg ok" role="status">{msg}</p>}
       </form>
 
-      <section className="panel stack">
-        <h2>Taste profile</h2>
-        <p className="muted">Your flavor and style preferences and what-matters sliders arrive with recommendations in Phase 4.</p>
-      </section>
+      <TasteProfile userId={user.id} />
 
       <section className="panel stack">
         <h2>Your data</h2>

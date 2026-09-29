@@ -1,6 +1,9 @@
 // Categories and their rating scales. Same scales as the Community prototype (prototypes/community.html),
 // kept here so the rating form (Phase 3) and recommendations (Phase 4) share one source of truth.
 // Criterion: [key, label, default importance 0-10, hint, isOptionalAmenity]
+// tagGroups: what raters tick. Stored on ratings as "<prefix>:<option>", e.g. "a:cozy", "g:date".
+//   The group marked occasion: true feeds the "What's the occasion?" picker.
+// Restaurants also carry cuisines ("c:italian/molisano"), see cuisines.js.
 // photos: labelled photo slots, one photo per slot per person. Keep in sync with supabase/004_photos.sql
 
 export const CATEGORIES = {
@@ -9,8 +12,11 @@ export const CATEGORIES = {
     one: "Restaurant",
     label: "Restaurants",
     unit: "per person",
-    tagTitle: "Flavor profile",
-    tags: [["spicy", "Spicy"], ["umami", "Savory / umami"], ["fresh", "Fresh & light"], ["rich", "Rich & hearty"], ["sweet", "Sweet"], ["smoky", "Smoky / grilled"], ["tangy", "Tangy / sour"]],
+    tagGroups: [
+      { key: "ambiance", prefix: "a", label: "Ambiance", options: [["cozy", "Cozy"], ["lively", "Lively"], ["upscale", "Upscale"], ["casual", "Casual"], ["romantic", "Romantic"], ["quiet", "Quiet"], ["patio", "Patio / terrace"], ["view", "Great view"]] },
+      { key: "goodfor", prefix: "g", label: "Good for", occasion: true, options: [["date", "Date night"], ["friends", "Friends night out"], ["family", "Family"], ["business", "Business meal"], ["solo", "Solo"], ["groups", "Big groups"]] },
+      { key: "dietary", prefix: "d", label: "Dietary options", options: [["vegetarian", "Vegetarian options"], ["vegan", "Vegan options"], ["gluten-free", "Gluten-free options"], ["halal", "Halal"], ["kosher", "Kosher"]] },
+    ],
     criteria: [
       ["food", "Food quality", 10, "Taste, execution, freshness"],
       ["value", "Value for money", 7, "Portions and quality for the price"],
@@ -27,8 +33,11 @@ export const CATEGORIES = {
     one: "Bar",
     label: "Bars & breweries",
     unit: "per evening",
-    tagTitle: "Drinks profile",
-    tags: [["hoppy", "Hoppy / bitter"], ["sour", "Sour & funky"], ["malty", "Malty / bready"], ["roasty", "Dark & roasty"], ["spirit", "Spirit-forward"], ["fruity", "Fruity / sweet"], ["lively", "Loud & lively"]],
+    tagGroups: [
+      { key: "knownfor", prefix: "k", label: "Known for", options: [["cocktails", "Cocktails"], ["craft-beer", "Craft beer"], ["wine", "Wine"], ["spirits", "Whisky & spirits"], ["zero-proof", "Non-alcoholic options"]] },
+      { key: "ambiance", prefix: "a", label: "Ambiance", options: [["cozy", "Cozy"], ["lively", "Lively"], ["upscale", "Upscale"], ["dive", "Dive bar"], ["live-music", "Live music"], ["dancing", "Dancing"], ["patio", "Patio / terrace"], ["sports-tv", "Sports on TV"]] },
+      { key: "goodfor", prefix: "g", label: "Good for", occasion: true, options: [["date", "Date night"], ["friends", "Friends night out"], ["after-work", "After work"], ["groups", "Big groups"], ["solo", "Solo"]] },
+    ],
     criteria: [
       ["drinks", "Drink quality", 9, "Beer, cocktails, wine done well"],
       ["vibe", "Atmosphere & vibe", 8, "Energy, music, look and feel"],
@@ -45,8 +54,11 @@ export const CATEGORIES = {
     one: "Hotel",
     label: "Hotels",
     unit: "per night",
-    tagTitle: "Hotel style",
-    tags: [["quiet", "Quiet & calm"], ["lively", "Social & lively"], ["luxury", "Luxury"], ["design", "Design-forward"], ["business", "Business-ready"], ["family", "Family-friendly"], ["budget", "No-frills budget"]],
+    tagGroups: [
+      { key: "style", prefix: "s", label: "Style", options: [["boutique", "Boutique"], ["luxury", "Luxury"], ["business", "Business"], ["budget", "Budget"], ["resort", "Resort"], ["bnb", "B&B / hostel"]] },
+      { key: "ambiance", prefix: "a", label: "Ambiance", options: [["quiet", "Quiet"], ["social", "Social"], ["design", "Design-forward"], ["historic", "Historic"]] },
+      { key: "goodfor", prefix: "g", label: "Good for", occasion: true, options: [["couples", "Couples"], ["families", "Families"], ["business", "Business trips"], ["solo", "Solo"], ["groups", "Groups"]] },
+    ],
     criteria: [
       ["comfort", "Room comfort & bed", 9, "Mattress, pillows, room size"],
       ["clean", "Cleanliness", 8, "Room, bathroom, common areas"],
@@ -66,8 +78,10 @@ export const CATEGORIES = {
     one: "Sports venue",
     label: "Sports events",
     unit: "per ticket",
-    tagTitle: "Game-day style",
-    tags: [["rowdy", "Rowdy crowd"], ["family", "Family outing"], ["premium", "Premium experience"], ["local", "Local & niche"], ["outdoors", "Outdoors"]],
+    tagGroups: [
+      { key: "ambiance", prefix: "a", label: "Ambiance", options: [["rowdy", "Rowdy"], ["family-friendly", "Family-friendly"], ["premium", "Premium"], ["local", "Local & niche"], ["outdoors", "Outdoors"]] },
+      { key: "goodfor", prefix: "g", label: "Good for", occasion: true, options: [["friends", "Friends"], ["family", "Family"], ["date", "Date"], ["clients", "Hosting clients"]] },
+    ],
     criteria: [
       ["sight", "Sightlines", 9, "How well you see the play from typical seats"],
       ["atmos", "Crowd atmosphere", 9, "Energy, chants, game-day feel"],
@@ -84,8 +98,10 @@ export const CATEGORIES = {
     one: "Sight",
     label: "Tourist attractions",
     unit: "per person",
-    tagTitle: "Sightseeing style",
-    tags: [["history", "History"], ["art", "Art & design"], ["nature", "Nature & outdoors"], ["science", "Science"], ["kids", "Great with kids"], ["adventure", "Active & adventurous"], ["food", "Food-focused"]],
+    tagGroups: [
+      { key: "type", prefix: "t", label: "Type", options: [["history", "History"], ["art", "Art"], ["nature", "Nature"], ["science", "Science"], ["food", "Food"], ["adventure", "Adventure"], ["views", "Views"]] },
+      { key: "goodfor", prefix: "g", label: "Good for", occasion: true, options: [["kids", "Kids"], ["couples", "Couples"], ["friends", "Friends"], ["solo", "Solo"], ["rainy-day", "Rainy day"]] },
+    ],
     criteria: [
       ["exp", "The experience itself", 10, "Did it live up to the hype?"],
       ["time", "Time well spent", 6, "Worth the hours it takes"],
@@ -101,3 +117,14 @@ export const CATEGORIES = {
 };
 
 export const CATEGORY_KEYS = Object.keys(CATEGORIES);
+
+// Every tag for a category as [fullKey, label, group], e.g. ["a:cozy", "Cozy", group]
+export const allTags = (category) =>
+  CATEGORIES[category].tagGroups.flatMap((g) => g.options.map(([k, label]) => [`${g.prefix}:${k}`, label, g]));
+
+export const tagLabel = (category, fullKey) => allTags(category).find(([k]) => k === fullKey)?.[1] || fullKey;
+
+export const occasionGroup = (category) => CATEGORIES[category].tagGroups.find((g) => g.occasion);
+
+// Dietary needs a person can set on their profile, matched to restaurants' "d:" tags
+export const DIETARY_NEEDS = [["vegetarian", "Vegetarian"], ["vegan", "Vegan"], ["gluten-free", "Gluten-free"], ["halal", "Halal"], ["kosher", "Kosher"]];

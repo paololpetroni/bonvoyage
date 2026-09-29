@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.jsx";
-import { CATEGORIES } from "../lib/categories.js";
+import { CATEGORIES, allTags } from "../lib/categories.js";
+import { cuisineFromOsm, cuisineInfo } from "../lib/cuisines.js";
+import CuisinePicker from "./CuisinePicker.jsx";
 import { deletePhoto, photoUrl, uploadPhoto } from "../lib/photos.js";
 
 const stars = (v) => "★".repeat(Math.floor(v)) + (v % 1 ? "½" : "") + "☆".repeat(5 - Math.ceil(v));
@@ -11,7 +13,15 @@ export default function RatingForm({ place, category, existing, myPhotos = [], o
   const { user } = useAuth();
   const cat = CATEGORIES[category];
   const [overall, setOverall] = useState(existing?.overall ? Number(existing.overall) : 4);
-  const [tags, setTags] = useState(new Set(existing?.tags || []));
+  const known = new Set(allTags(category).map(([k]) => k));
+  const [tags, setTags] = useState(new Set((existing?.tags || []).filter((t) => known.has(t))));
+  // Cuisine: from your earlier rating, else OpenStreetMap's guess for this place
+  const [cuisines, setCuisines] = useState(() => {
+    const mineC = (existing?.tags || []).filter((t) => t.startsWith("c:")).map((t) => t.slice(2)).filter((k) => cuisineInfo(k));
+    if (mineC.length) return mineC;
+    const guess = category === "restaurants" ? place.cuisine || cuisineFromOsm(place.type) : null;
+    return guess ? [guess] : [];
+  });
   const [criteria, setCriteria] = useState(() => {
     const c = {};
     for (const [k] of cat.criteria) c[k] = existing?.criteria && k in existing.criteria ? existing.criteria[k] : undefined;
@@ -72,7 +82,7 @@ export default function RatingForm({ place, category, existing, myPhotos = [], o
     const crit = {};
     for (const [k, v] of Object.entries(criteria)) if (v !== undefined) crit[k] = v; // undefined = skipped, null = doesn't have one
     const { error } = await supabase.from("ratings").upsert(
-      { user_id: user.id, place_id: place.id, overall, tags: [...tags], criteria: crit, spend: spend === "" ? null : Number(spend) },
+      { user_id: user.id, place_id: place.id, overall, tags: [...cuisines.map((c) => `c:${c}`), ...tags], criteria: crit, spend: spend === "" ? null : Number(spend) },
       { onConflict: "user_id,place_id" }
     );
     if (error) {
@@ -118,14 +128,24 @@ export default function RatingForm({ place, category, existing, myPhotos = [], o
         <input id={`overall-${place.id}`} type="range" min="1" max="5" step="0.5" value={overall} onChange={(e) => setOverall(Number(e.target.value))} />
       </div>
 
-      <div className="field">
-        <span>{category === "restaurants" || category === "bars" ? "What did it taste like?" : "What was it like?"} <span className="muted small">Tap all that apply</span></span>
-        <div className="tagpick">
-          {cat.tags.map(([k, label]) => (
-            <button key={k} type="button" aria-pressed={tags.has(k)} onClick={() => toggleTag(k)}>{label}</button>
-          ))}
+      {category === "restaurants" && (
+        <div className="field">
+          <span>Cuisine <span className="muted small">up to 2, regional if you know it</span></span>
+          <CuisinePicker value={cuisines} onChange={setCuisines} max={2} label="Cuisine" />
         </div>
-      </div>
+      )}
+
+      {cat.tagGroups.map((g) => (
+        <div key={g.key} className="field">
+          <span>{g.label} <span className="muted small">tap all that apply</span></span>
+          <div className="tagpick">
+            {g.options.map(([k, label]) => {
+              const full = `${g.prefix}:${k}`;
+              return <button key={full} type="button" aria-pressed={tags.has(full)} onClick={() => toggleTag(full)}>{label}</button>;
+            })}
+          </div>
+        </div>
+      ))}
 
       <details>
         <summary>Voyage-Meter <span className="muted small">{detailCount ? `${detailCount} of ${cat.criteria.length} rated` : "optional detail scores"}</span></summary>
