@@ -4,6 +4,7 @@
 
 export const CATEGORIES = {
   restaurants: {
+    one: "Restaurant",
     label: "Restaurants",
     unit: "per person",
     tagTitle: "Flavor profile",
@@ -20,6 +21,7 @@ export const CATEGORIES = {
     ],
   },
   bars: {
+    one: "Bar",
     label: "Bars & breweries",
     unit: "per evening",
     tagTitle: "Drinks profile",
@@ -36,6 +38,7 @@ export const CATEGORIES = {
     ],
   },
   hotels: {
+    one: "Hotel",
     label: "Hotels",
     unit: "per night",
     tagTitle: "Hotel style",
@@ -55,6 +58,7 @@ export const CATEGORIES = {
     ],
   },
   sports: {
+    one: "Sports venue",
     label: "Sports events",
     unit: "per ticket",
     tagTitle: "Game-day style",
@@ -71,6 +75,7 @@ export const CATEGORIES = {
     ],
   },
   sights: {
+    one: "Sight",
     label: "Tourist attractions",
     unit: "per person",
     tagTitle: "Sightseeing style",

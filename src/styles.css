@@ -83,3 +83,20 @@ input[type=text], input[type=email], input[type=password], input[type=search], i
 .prose ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 
 @media (max-width: 520px) { .list-head { grid-template-columns: minmax(0, 1fr); } }
+
+/* Phase 2: city picker and place search */
+.city-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.tiny { font-size: 0.74rem; }
+select { font: 500 0.95rem var(--body); padding: 9px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; }
+.results { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.results > li + li { border-top: 1px solid var(--line); }
+.result { width: 100%; text-align: left; background: var(--surface); color: var(--ink); border: 0; padding: 10px 12px; cursor: pointer; font: inherit; }
+.result:hover, .result:focus-visible { background: var(--accent-soft); }
+.result-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; background: var(--surface); }
+.result-text { display: grid; min-width: 0; }
+.result-text .small { overflow-wrap: anywhere; }
+.btn.small { padding: 6px 12px; font-size: 0.84rem; }
+.chip.done { border: 1px solid var(--good); color: var(--good); }
+.panel.inset { background: var(--bg); }
+.two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.card.highlight { border-color: var(--good); box-shadow: 0 0 0 1px var(--good); }
