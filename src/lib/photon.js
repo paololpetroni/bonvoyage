@@ -66,16 +66,41 @@ async function photon(params, signal) {
   return (await res.json()).features || [];
 }
 
-// Places and addresses, nudged toward the city being viewed
+// How far from the chosen city search and the Community list reach
+export const RADIUS_KM = 50;
+
+// Straight-line distance in km between two points
+export function distanceKm(a, b) {
+  const R = 6371, rad = (d) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Box around a point that contains the whole circle of radiusKm
+export function radiusBounds(center, radiusKm = RADIUS_KM) {
+  const dLat = radiusKm / 111.32;
+  const dLon = radiusKm / (111.32 * Math.max(0.05, Math.cos((center.lat * Math.PI) / 180)));
+  return { minLat: center.lat - dLat, maxLat: center.lat + dLat, minLon: center.lon - dLon, maxLon: center.lon + dLon };
+}
+
+// Places and addresses within RADIUS_KM of the chosen city. Each result keeps its own town (a Pergola
+// restaurant found while viewing Frontone is saved as Pergola) and carries its distance from the city.
 export async function searchPlaces(q, { near, signal } = {}) {
-  const features = await photon({ q, limit: 10, lang: LANG, lat: near?.lat, lon: near?.lon, zoom: near ? 12 : null, location_bias_scale: near ? 0.2 : null }, signal);
+  const b = near ? radiusBounds(near) : null;
+  const features = await photon({
+    q, limit: 15, lang: LANG,
+    lat: near?.lat, lon: near?.lon, zoom: near ? 11 : null, location_bias_scale: near ? 0.2 : null,
+    bbox: b ? [b.minLon, b.minLat, b.maxLon, b.maxLat].map((v) => v.toFixed(5)).join(",") : null,
+  }, signal);
   const seen = new Set();
-  return features.map(toResult).filter((r) => {
+  return features.map(toResult).map((r) => ({ ...r, km: near && r.lat != null ? distanceKm(near, r) : null })).filter((r) => {
     const key = r.osm_type + r.osm_id;
     if (!r.name || seen.has(key)) return false;
+    if (r.km != null && r.km > RADIUS_KM) return false;
     seen.add(key);
     return true;
-  });
+  }).slice(0, 10);
 }
 
 // Cities, for the city picker. extent is [minLon, maxLat, maxLon, minLat].
@@ -86,17 +111,6 @@ export async function searchCities(q, { signal } = {}) {
     const [lon, lat] = f.geometry?.coordinates || [];
     return { name: p.name, region: [p.state, p.country].filter(Boolean).join(", "), lat, lon, extent: p.extent || null };
   }).filter((c) => c.name && c.lat != null);
-}
-
-// Search area for a city: its outline from OpenStreetMap, or about 20 km around its centre
-export function cityBounds(city) {
-  if (city.extent?.length === 4) {
-    const [minLon, maxLat, maxLon, minLat] = city.extent;
-    const padLat = (maxLat - minLat) * 0.15, padLon = (maxLon - minLon) * 0.15;
-    return { minLat: minLat - padLat, maxLat: maxLat + padLat, minLon: minLon - padLon, maxLon: maxLon + padLon };
-  }
-  const dLat = 0.18, dLon = 0.18 / Math.max(0.2, Math.cos((city.lat * Math.PI) / 180));
-  return { minLat: city.lat - dLat, maxLat: city.lat + dLat, minLon: city.lon - dLon, maxLon: city.lon + dLon };
 }
 
 export const DEFAULT_CITY = { name: "Montreal", region: "Quebec, Canada", lat: 45.5019, lon: -73.5674, extent: [-73.98, 45.71, -73.47, 45.41] };

@@ -14,6 +14,8 @@ Phase 1 is done when you can sign up, sign in, and see the Community tab (empty 
 | `src/lib/categories.js` | Rating scales and flavor/style tags for every category |
 | `supabase/schema.sql` | Full database setup for a brand-new Supabase project (includes every update) |
 | `supabase/002_place_search.sql` | Update 2: adding places from search, listing places in any city |
+| `supabase/003_ratings.sql` | Update 3: rating checks and community breakdown |
+| `supabase/004_photos.sql` | Update 4: photo storage and rules |
 | `src/lib/photon.js` | Place search (Photon, built on OpenStreetMap) and sorting results into categories |
 | `prototypes/` | The Community prototype. Put `bonvoyage.html` (the trip wizard prototype) here too |
 | `.env.example` | Template for your two Supabase settings |

@@ -1,9 +1,11 @@
 // Categories and their rating scales. Same scales as the Community prototype (prototypes/community.html),
 // kept here so the rating form (Phase 3) and recommendations (Phase 4) share one source of truth.
 // Criterion: [key, label, default importance 0-10, hint, isOptionalAmenity]
+// photos: labelled photo slots, one photo per slot per person. Keep in sync with supabase/004_photos.sql
 
 export const CATEGORIES = {
   restaurants: {
+    photos: [["app", "Appetizer"], ["main", "Main"], ["dessert", "Dessert"], ["vibe", "Vibe"]],
     one: "Restaurant",
     label: "Restaurants",
     unit: "per person",
@@ -21,6 +23,7 @@ export const CATEGORIES = {
     ],
   },
   bars: {
+    photos: [["drinks", "Drinks"], ["vibe", "Vibe"]],
     one: "Bar",
     label: "Bars & breweries",
     unit: "per evening",
@@ -38,6 +41,7 @@ export const CATEGORIES = {
     ],
   },
   hotels: {
+    photos: [["room", "Room"], ["bathroom", "Bathroom"], ["view", "View"], ["common", "Common areas"]],
     one: "Hotel",
     label: "Hotels",
     unit: "per night",
@@ -58,6 +62,7 @@ export const CATEGORIES = {
     ],
   },
   sports: {
+    photos: [["seat", "View from your seat"], ["atmos", "Atmosphere"], ["food", "Food & drink"]],
     one: "Sports venue",
     label: "Sports events",
     unit: "per ticket",
@@ -75,6 +80,7 @@ export const CATEGORIES = {
     ],
   },
   sights: {
+    photos: [["highlight", "Highlight"], ["view", "View"], ["crowds", "Crowds"]],
     one: "Sight",
     label: "Tourist attractions",
     unit: "per person",

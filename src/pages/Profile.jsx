@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.jsx";
+import { deleteAllMyPhotos } from "../lib/photos.js";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -28,12 +29,13 @@ export default function Profile() {
   }
 
   async function exportData() {
-    const [p, r, pl] = await Promise.all([
+    const [p, r, pl, ph] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).single(),
       supabase.from("ratings").select("*").eq("user_id", user.id),
       supabase.from("places").select("*").eq("created_by", user.id),
+      supabase.from("place_photos").select("*").eq("user_id", user.id),
     ]);
-    const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), email: user.email, profile: p.data, ratings: r.data, places_added: pl.data }, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), email: user.email, profile: p.data, ratings: r.data, places_added: pl.data, photos: ph.data }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "bonvoyage-my-data.json";
@@ -42,6 +44,7 @@ export default function Profile() {
   }
 
   async function deleteAccount() {
+    await deleteAllMyPhotos(user.id);
     const { error } = await supabase.rpc("delete_my_account");
     if (error) return setMsg("Couldn't delete your account: " + error.message);
     await supabase.auth.signOut();
@@ -75,7 +78,7 @@ export default function Profile() {
 
       <section className="panel stack">
         <h2>Taste profile</h2>
-        <p className="muted">Your flavor and style preferences and what-matters sliders arrive with ratings in Phase 3.</p>
+        <p className="muted">Your flavor and style preferences and what-matters sliders arrive with recommendations in Phase 4.</p>
       </section>
 
       <section className="panel stack">

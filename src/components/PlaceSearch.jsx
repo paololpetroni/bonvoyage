@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { searchPlaces } from "../lib/photon.js";
+import { searchPlaces, RADIUS_KM } from "../lib/photon.js";
 import { useDebouncedSearch } from "../lib/useDebouncedSearch.js";
 import { CATEGORIES, CATEGORY_KEYS } from "../lib/categories.js";
 import { supabase } from "../lib/supabase.js";
@@ -47,19 +47,20 @@ export default function PlaceSearch({ city, knownOsm, onAdded }) {
     <section className="panel stack search-panel">
       <label className="field">Find a place
         <input id="placeSearch" type="search" value={q} onChange={(e) => { setQ(e.target.value); setMsg({ kind: "", text: "" }); }}
-          placeholder={`Restaurant, bar, hotel, stadium or sight in ${city.name}, by name or address`} autoComplete="off" />
+          placeholder={`Restaurant, bar, hotel, stadium or sight within ${RADIUS_KM} km of ${city.name}, by name or address`} autoComplete="off" />
       </label>
 
       {status === "loading" && <p className="muted small">Searching…</p>}
       {status === "error" && <p className="msg error">{error}</p>}
-      {status === "done" && results.length === 0 && <p className="muted small">Nothing found. Try the street address instead.</p>}
+      {status === "done" && results.length === 0 && <p className="muted small">Nothing found within {RADIUS_KM} km of {city.name}. Try the street address, or if it's somewhere else, use Change city above.</p>}
       {msg.text && <p className={`msg ${msg.kind}`} role="status">{msg.text}</p>}
 
       {results.length > 0 && q.trim().length >= 3 && (
         <ul className="results">
           {results.map((r) => {
             const key = (r.osm_type || "") + (r.osm_id || "");
-            const where = [r.address, r.city].filter(Boolean).join(" · ");
+            const away = r.km == null ? null : r.km < 1 ? "under 1 km" : `${Math.round(r.km)} km`;
+            const where = [r.address, r.city, away].filter(Boolean).join(" · ");
             const already = r.osm_id && knownOsm.has(`${r.osm_type}:${r.osm_id}`);
             return (
               <li key={key} className="result-row">

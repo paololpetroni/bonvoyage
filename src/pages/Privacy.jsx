@@ -27,7 +27,7 @@ export default function Privacy() {
       <ul>
         <li><strong>Account details.</strong> Your email address and a hashed password, or your Google account email if you sign in with Google.</li>
         <li><strong>Profile.</strong> The display name and home city you choose, and your taste and budget preferences.</li>
-        <li><strong>Your contributions.</strong> Ratings, tags, what you say you spent, and places you add.</li>
+        <li><strong>Your contributions.</strong> Ratings, tags, what you say you spent, places you add, and photos you upload. Before upload, photos are resized and hidden details such as the GPS location where they were taken are removed.</li>
         <li><strong>Technical data.</strong> Our hosting providers keep standard server logs (such as IP address and time of request) for security.</li>
       </ul>
       <p>We don't collect payment details, precise location or contacts, and we don't sell personal information or show ads.</p>
@@ -36,6 +36,7 @@ export default function Privacy() {
       <ul>
         <li>To run your account and keep you signed in.</li>
         <li>To show community scores. Other people see the combined score for a place, not your individual ratings.</li>
+        <li>To show your photos on the place's page. Photos are public, so avoid uploading pictures of people who haven't agreed to it.</li>
         <li>To personalize recommendations, including comparing your ratings with other travelers' to find people with similar taste. This is automated and only affects the order of suggestions shown to you.</li>
         <li>To prevent abuse such as fake ratings.</li>
       </ul>

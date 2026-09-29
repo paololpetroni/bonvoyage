@@ -1,30 +1,42 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase, isConfigured } from "../lib/supabase.js";
+import { useAuth } from "../lib/auth.jsx";
 import { CATEGORIES, CATEGORY_KEYS } from "../lib/categories.js";
-import { DEFAULT_CITY, cityBounds } from "../lib/photon.js";
+import { DEFAULT_CITY, RADIUS_KM, distanceKm, radiusBounds } from "../lib/photon.js";
 import { SetupNeeded } from "../App.jsx";
 import CityPicker from "../components/CityPicker.jsx";
 import PlaceSearch from "../components/PlaceSearch.jsx";
+import RatingForm from "../components/RatingForm.jsx";
+import Breakdown from "../components/Breakdown.jsx";
+import PhotoStrip from "../components/PhotoStrip.jsx";
 
 const CITY_KEY = "bonvoyage-city";
 function loadCity() {
   try { return JSON.parse(localStorage.getItem(CITY_KEY)) || DEFAULT_CITY; } catch { return DEFAULT_CITY; }
 }
+const sameTown = (a, b) => (a || "").localeCompare(b || "", undefined, { sensitivity: "base" }) === 0;
 
 export default function Community() {
+  const { user } = useAuth();
   const [city, setCity] = useState(loadCity);
   const [cat, setCat] = useState("restaurants");
   const [places, setPlaces] = useState([]);
+  const [mine, setMine] = useState(new Map());
+  const [photos, setPhotos] = useState(new Map()); // place id -> photos, newest first
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("");
   const [highlight, setHighlight] = useState(null);
+  const [open, setOpen] = useState({ id: null, view: null }); // view: "rate" | "details"
+  const [notice, setNotice] = useState({ id: null, text: "" });
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const load = useCallback(async () => {
     if (!isConfigured) return;
-    setStatus("loading");
+    setStatus((s) => (s === "ready" ? "ready" : "loading"));
     setError("");
-    const b = cityBounds(city);
+    const b = radiusBounds(city);
     const { data, error: err } = await supabase.rpc("get_places_in_area", {
       p_min_lat: b.minLat, p_max_lat: b.maxLat, p_min_lon: b.minLon, p_max_lon: b.maxLon, p_category: cat,
     });
@@ -33,9 +45,26 @@ export default function Community() {
       setStatus("error");
       return;
     }
-    setPlaces(data || []);
+    const list = (data || [])
+      .map((p) => ({ ...p, km: distanceKm(city, p) }))
+      .filter((p) => p.km <= RADIUS_KM)
+      .sort((a, b) => (b.n - a.n) || (a.km - b.km));
+    setPlaces(list);
+
+    if (list.length) {
+      const { data: ph } = await supabase.from("place_photos").select("id, place_id, user_id, slot, path, width, height, created_at")
+        .in("place_id", list.map((p) => p.id)).order("created_at", { ascending: false }).limit(1000);
+      const byPlace = new Map();
+      for (const x of ph || []) byPlace.set(x.place_id, [...(byPlace.get(x.place_id) || []), x]);
+      setPhotos(byPlace);
+    } else setPhotos(new Map());
+
+    if (user && list.length) {
+      const { data: rs } = await supabase.from("ratings").select("*").eq("user_id", user.id).in("place_id", list.map((p) => p.id));
+      setMine(new Map((rs || []).map((r) => [r.place_id, r])));
+    } else setMine(new Map());
     setStatus("ready");
-  }, [city, cat]);
+  }, [city, cat, user]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -45,24 +74,38 @@ export default function Community() {
 
   function changeCity(c) {
     setCity(c);
+    setOpen({ id: null, view: null });
     try { localStorage.setItem(CITY_KEY, JSON.stringify(c)); } catch { /* private window: fine */ }
   }
 
   function added(place) {
     setHighlight(place.id);
+    setOpen({ id: place.id, view: user ? "rate" : null });
     if (place.category !== cat) setCat(place.category);
     else load();
   }
 
+  function toggle(id, view) {
+    setNotice({ id: null, text: "" });
+    setOpen((o) => (o.id === id && o.view === view ? { id: null, view: null } : { id, view }));
+  }
+
+  async function rated(id, text) {
+    setOpen({ id: null, view: null });
+    setNotice({ id, text });
+    setRefreshKey((k) => k + 1);
+    await load();
+  }
+
   const q = filter.trim().toLowerCase();
-  const shown = places.filter((p) => !q || `${p.name} ${p.type ?? ""} ${p.neighbourhood ?? ""} ${p.address ?? ""}`.toLowerCase().includes(q));
-  const rated = places.filter((p) => p.n > 0).length;
+  const shown = places.filter((p) => !q || `${p.name} ${p.type ?? ""} ${p.neighbourhood ?? ""} ${p.address ?? ""} ${p.city ?? ""}`.toLowerCase().includes(q));
+  const ratedCount = places.filter((p) => p.n > 0).length;
   const label = CATEGORIES[cat].label.toLowerCase();
 
   return (
     <div className="stack-lg">
       <div>
-        <div className="eyebrow">Community</div>
+        <div className="eyebrow">Community · within {RADIUS_KM} km</div>
         <CityPicker city={city} onChange={changeCity} />
       </div>
 
@@ -70,7 +113,7 @@ export default function Community() {
 
       <nav className="tabs" role="tablist" aria-label="Categories">
         {CATEGORY_KEYS.map((k) => (
-          <button key={k} type="button" role="tab" className="tab" aria-selected={k === cat} onClick={() => setCat(k)}>
+          <button key={k} type="button" role="tab" className="tab" aria-selected={k === cat} onClick={() => { setCat(k); setOpen({ id: null, view: null }); }}>
             {CATEGORIES[k].label}
           </button>
         ))}
@@ -79,7 +122,7 @@ export default function Community() {
       {status === "error" && (
         <div className="panel error">
           <strong>Couldn't load places.</strong> {error}
-          <p className="muted small">If this mentions get_places_in_area, run <code>supabase/002_place_search.sql</code> in the Supabase SQL editor.</p>
+          <p className="muted small">If this mentions a missing function, run the latest file in <code>supabase/</code> in the Supabase SQL editor.</p>
         </div>
       )}
 
@@ -87,8 +130,8 @@ export default function Community() {
 
       {status === "ready" && places.length === 0 && (
         <section className="panel empty">
-          <h2>No {label} in {city.name} yet</h2>
-          <p>Be the first: search for a place you know above and add it. Everything people add in {city.name} shows up here.</p>
+          <h2>No {label} near {city.name} yet</h2>
+          <p>Be the first: search for a place you know above and add it. Everything added within {RADIUS_KM} km of {city.name} shows up here.</p>
         </section>
       )}
 
@@ -98,27 +141,57 @@ export default function Community() {
             {places.length > 8
               ? <input type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={`Filter these ${label}`} aria-label="Filter places" />
               : <span />}
-            <span className="muted small">{places.length} on Bonvoyage · {rated} rated</span>
+            <span className="muted small">{places.length} on Bonvoyage · {ratedCount} rated</span>
           </div>
           <ul className="cards">
-            {shown.map((p) => (
-              <li key={p.id} className={`card${p.id === highlight ? " highlight" : ""}`}>
-                <div style={{ minWidth: 0 }}>
-                  <h3>{p.name}</h3>
-                  <div className="muted small">{[p.type, p.neighbourhood, p.address].filter(Boolean).join(" · ")}</div>
-                </div>
-                <div className="score">
-                  {p.n > 0 ? (
-                    <>
-                      <span className="big">{(p.avg_overall * 2).toFixed(1)}</span><span className="of">/10</span>
-                      <span className="small muted">{p.n} rating{p.n > 1 ? "s" : ""}</span>
-                    </>
-                  ) : (
-                    <span className="chip flag">Not yet rated</span>
+            {shown.map((p) => {
+              const my = mine.get(p.id);
+              const isOpen = open.id === p.id;
+              const town = p.city && !sameTown(p.city, city.name) && p.city !== "Unknown" ? p.city : null;
+              const away = p.km < 1 ? null : `${Math.round(p.km)} km`;
+              return (
+                <li key={p.id} className={`card${p.id === highlight ? " highlight" : ""}`}>
+                  <div className="card-main">
+                    <div style={{ minWidth: 0 }}>
+                      <h3>{p.name}</h3>
+                      <div className="muted small">{[p.type, town, p.neighbourhood, p.address, away].filter(Boolean).join(" · ")}</div>
+                    </div>
+                    <div className="score">
+                      {p.n > 0 ? (
+                        <>
+                          <span className="big">{(p.avg_overall * 2).toFixed(1)}</span><span className="of">/10</span>
+                          <span className="small muted">{p.n} rating{p.n > 1 ? "s" : ""}</span>
+                        </>
+                      ) : (
+                        <span className="chip flag">Not yet rated</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <PhotoStrip photos={photos.get(p.id) || []} slots={CATEGORIES[cat].photos} placeName={p.name} />
+
+                  <div className="card-actions">
+                    {my && <span className="chip mine">You rated {(my.overall * 2).toFixed(1)}</span>}
+                    {user
+                      ? <button className={`btn small${my ? " ghost" : ""}`} type="button" onClick={() => toggle(p.id, "rate")}>
+                          {isOpen && open.view === "rate" ? "Close" : my ? "Edit my rating" : p.n ? "Rate it" : "Be the first to rate"}
+                        </button>
+                      : <Link className="btn ghost small" to="/sign-in">Sign in to rate</Link>}
+                    {p.n > 0 && (
+                      <button className="linkbtn" type="button" onClick={() => toggle(p.id, "details")}>
+                        {isOpen && open.view === "details" ? "Hide details" : "Community details"}
+                      </button>
+                    )}
+                    {notice.id === p.id && <span className="msg ok small" role="status">{notice.text}</span>}
+                  </div>
+
+                  {isOpen && open.view === "details" && <Breakdown place={p} category={cat} refreshKey={refreshKey} />}
+                  {isOpen && open.view === "rate" && user && (
+                    <RatingForm place={p} category={cat} existing={my} myPhotos={(photos.get(p.id) || []).filter((x) => x.user_id === user.id)} onDone={(text) => rated(p.id, text)} onCancel={() => setOpen({ id: null, view: null })} />
                   )}
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </>
       )}

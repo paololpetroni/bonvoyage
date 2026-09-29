@@ -259,3 +259,158 @@ language sql stable security definer set search_path = '' as $$
 $$;
 revoke all on function public.get_places_in_area(double precision, double precision, double precision, double precision, public.place_category) from public;
 grant execute on function public.get_places_in_area(double precision, double precision, double precision, double precision, public.place_category) to anon, authenticated;
+
+-- ===========================================================================
+-- Update 003 (also in 003_ratings.sql): rating checks and community breakdown
+-- ===========================================================================
+
+-- Check every rating before it is saved, whatever app sends it
+create or replace function public.validate_rating()
+returns trigger language plpgsql set search_path = '' as $$
+declare
+  k text;
+  v jsonb;
+  n numeric;
+begin
+  if new.criteria is null then new.criteria := '{}'::jsonb; end if;
+  if jsonb_typeof(new.criteria) <> 'object' then
+    raise exception 'Detail scores are in the wrong format';
+  end if;
+  if (select count(*) from jsonb_object_keys(new.criteria)) > 20 then
+    raise exception 'Too many detail scores';
+  end if;
+  for k, v in select key, value from jsonb_each(new.criteria) loop
+    if char_length(k) > 20 then
+      raise exception 'Unknown detail score';
+    end if;
+    continue when jsonb_typeof(v) = 'null';  -- null means "doesn't have one" (no pool, no gym)
+    if jsonb_typeof(v) <> 'number' then
+      raise exception 'Detail scores must be numbers';
+    end if;
+    n := (v #>> '{}')::numeric;
+    if n < 1 or n > 5 or n * 2 <> floor(n * 2) then
+      raise exception 'Detail scores must be 1 to 5 in half steps';
+    end if;
+  end loop;
+  if new.tags is null then new.tags := '{}'; end if;
+  if cardinality(new.tags) > 12 or exists (select 1 from unnest(new.tags) t where char_length(t) > 20) then
+    raise exception 'Too many tags';
+  end if;
+  new.tags := array(select distinct t from unnest(new.tags) t order by t);
+  if new.spend is not null and new.spend > 100000 then
+    raise exception 'That amount looks too high';
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists ratings_validate on public.ratings;
+create trigger ratings_validate before insert or update on public.ratings for each row execute function public.validate_rating();
+
+-- Community breakdown for one place: averages and tag counts only, never who rated what
+create or replace function public.get_place_breakdown(p_place_id bigint)
+returns jsonb
+language sql stable security definer set search_path = '' as $$
+  with r as (
+    select r.* from public.ratings r
+    join public.places p on p.id = r.place_id
+    where r.place_id = p_place_id and p.status = 'approved'
+  )
+  select jsonb_build_object(
+    'n', (select count(*) from r),
+    'overall', (select round(avg(overall), 2) from r),
+    'spend', (select round(avg(spend)) from r where spend is not null),
+    'criteria', coalesce((
+      select jsonb_object_agg(key, avg_v) from (
+        select e.key, round(avg((e.value #>> '{}')::numeric), 2) as avg_v
+        from r, jsonb_each(r.criteria) e where jsonb_typeof(e.value) = 'number' group by e.key
+      ) s), '{}'::jsonb),
+    'missing', coalesce((
+      select jsonb_object_agg(key, c) from (
+        select e.key, count(*) as c from r, jsonb_each(r.criteria) e where jsonb_typeof(e.value) = 'null' group by e.key
+      ) s), '{}'::jsonb),
+    'tags', coalesce((
+      select jsonb_object_agg(t, c) from (
+        select t, count(*) as c from r, unnest(r.tags) t group by t
+      ) s), '{}'::jsonb)
+  );
+$$;
+revoke all on function public.get_place_breakdown(bigint) from public;
+grant execute on function public.get_place_breakdown(bigint) to anon, authenticated;
+
+-- ===========================================================================
+-- Update 004 (also in 004_photos.sql): labelled photos
+-- ===========================================================================
+
+-- Storage folder for photos. Public so photos load fast; uploads limited to 3 MB JPEG/WebP.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('place-photos', 'place-photos', true, 3145728, array['image/jpeg', 'image/webp'])
+on conflict (id) do update set public = true, file_size_limit = 3145728, allowed_mime_types = array['image/jpeg', 'image/webp'];
+
+-- Which photo belongs to which place, which slot it fills (Main, Room, Drinks...) and who added it.
+-- Files live at place-photos/<place id>/<user id>/<slot>-<random>.jpg
+create table if not exists public.place_photos (
+  id          bigint generated always as identity primary key,
+  place_id    bigint not null references public.places (id) on delete cascade,
+  user_id     uuid not null references auth.users (id) on delete cascade,
+  slot        text not null,
+  path        text not null unique check (char_length(path) < 200),
+  width       integer check (width between 1 and 4000),
+  height      integer check (height between 1 and 4000),
+  created_at  timestamptz not null default now(),
+  unique (place_id, user_id, slot)   -- one photo per slot per person
+);
+create index if not exists place_photos_place_idx on public.place_photos (place_id, created_at desc);
+alter table public.place_photos enable row level security;
+
+-- Photo slots per category. Keep in sync with "photos" in src/lib/categories.js
+create or replace function public.photo_slots(p_category public.place_category)
+returns text[] language sql immutable set search_path = '' as $$
+  select case p_category
+    when 'restaurants' then array['app', 'main', 'dessert', 'vibe']
+    when 'bars'        then array['drinks', 'vibe']
+    when 'hotels'      then array['room', 'bathroom', 'view', 'common']
+    when 'sports'      then array['seat', 'atmos', 'food']
+    when 'sights'      then array['highlight', 'view', 'crowds']
+  end;
+$$;
+
+-- Reject a photo whose slot doesn't belong to the place's category
+create or replace function public.check_photo_slot()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_category public.place_category;
+begin
+  select category into v_category from public.places where id = new.place_id;
+  if not (new.slot = any (public.photo_slots(v_category))) then
+    raise exception 'That photo type doesn''t fit this kind of place';
+  end if;
+  return new;
+end $$;
+drop trigger if exists place_photos_slot on public.place_photos;
+create trigger place_photos_slot before insert or update on public.place_photos for each row execute function public.check_photo_slot();
+
+-- Anyone can see photos of approved places
+drop policy if exists "read photos" on public.place_photos;
+create policy "read photos" on public.place_photos for select to anon, authenticated
+  using (exists (select 1 from public.places p where p.id = place_id and (p.status = 'approved' or p.created_by = (select auth.uid()))));
+
+-- You can add photos only in your own folder
+drop policy if exists "add own photo" on public.place_photos;
+create policy "add own photo" on public.place_photos for insert to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and path like place_id::text || '/' || (select auth.uid())::text || '/%'
+    and exists (select 1 from public.places p where p.id = place_id and (p.status = 'approved' or p.created_by = (select auth.uid())))
+  );
+
+drop policy if exists "delete own photo" on public.place_photos;
+create policy "delete own photo" on public.place_photos for delete to authenticated using (user_id = (select auth.uid()));
+
+-- The files themselves: upload and delete only inside your own folder (<place id>/<your user id>/...)
+drop policy if exists "upload own place photos" on storage.objects;
+create policy "upload own place photos" on storage.objects for insert to authenticated
+  with check (bucket_id = 'place-photos' and (storage.foldername(name))[2] = (select auth.uid())::text);
+
+drop policy if exists "delete own place photos" on storage.objects;
+create policy "delete own place photos" on storage.objects for delete to authenticated
+  using (bucket_id = 'place-photos' and (storage.foldername(name))[2] = (select auth.uid())::text);
