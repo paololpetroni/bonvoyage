@@ -4,15 +4,14 @@ import { useAuth } from "../lib/auth.jsx";
 import { CATEGORIES, allTags } from "../lib/categories.js";
 import { cuisineFromOsm, cuisineInfo } from "../lib/cuisines.js";
 import CuisinePicker from "./CuisinePicker.jsx";
+import StarInput from "./StarInput.jsx";
 import { deletePhoto, photoUrl, uploadPhoto } from "../lib/photos.js";
-
-const stars = (v) => "★".repeat(Math.floor(v)) + (v % 1 ? "½" : "") + "☆".repeat(5 - Math.ceil(v));
 
 // Rate a place: overall stars, what it was like (tags), optional detail scores, what you spent.
 export default function RatingForm({ place, category, existing, myPhotos = [], onDone, onCancel }) {
   const { user } = useAuth();
   const cat = CATEGORIES[category];
-  const [overall, setOverall] = useState(existing?.overall ? Number(existing.overall) : 4);
+  const [overall, setOverall] = useState(existing?.overall ? Number(existing.overall) : null);
   const known = new Set(allTags(category).map(([k]) => k));
   const [tags, setTags] = useState(new Set((existing?.tags || []).filter((t) => known.has(t))));
   // Cuisine: from your earlier rating, else OpenStreetMap's guess for this place
@@ -77,6 +76,7 @@ export default function RatingForm({ place, category, existing, myPhotos = [], o
 
   async function save(e) {
     e.preventDefault();
+    if (!overall) return setErr("Tap the stars to give your overall rating first.");
     setBusy(true);
     setErr("");
     const crit = {};
@@ -123,9 +123,9 @@ export default function RatingForm({ place, category, existing, myPhotos = [], o
 
   return (
     <form className="rateform" onSubmit={save}>
-      <div className="field">
-        <div className="field-top"><label htmlFor={`overall-${place.id}`}>Overall</label><span className="stars">{stars(overall)} {overall.toFixed(1)}</span></div>
-        <input id={`overall-${place.id}`} type="range" min="1" max="5" step="0.5" value={overall} onChange={(e) => setOverall(Number(e.target.value))} />
+      <div className="field overall-field">
+        <span className="field-title">How was it overall?</span>
+        <StarInput id={`overall-${place.id}`} value={overall} onChange={setOverall} label={`Overall rating for ${place.name}`} size="lg" />
       </div>
 
       {category === "restaurants" && (

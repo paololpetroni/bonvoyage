@@ -147,8 +147,13 @@ for (const f of CUISINES) {
   for (const reg of f.regions) for (const o of reg.osm || []) if (!OSM_MAP.has(o)) OSM_MAP.set(o, reg.key);
   for (const o of f.osm || []) if (!OSM_MAP.has(o)) OSM_MAP.set(o, f.key);
 }
+// Cuisine names typed by people ("Burgers", "Marchigiano (Southern)") map back to their key too
+const LABEL_MAP = new Map(CUISINE_OPTIONS.map((o) => [o.label.toLowerCase(), o.key]));
+
 export function cuisineFromOsm(text) {
   if (!text) return null;
+  const byLabel = LABEL_MAP.get(String(text).trim().toLowerCase());
+  if (byLabel) return byLabel;
   for (const part of String(text).toLowerCase().split(/[;,]/)) {
     const k = part.trim().replace(/[\s-]+/g, "_");
     if (OSM_MAP.has(k)) return OSM_MAP.get(k);

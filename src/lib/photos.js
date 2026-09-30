@@ -49,9 +49,25 @@ export async function deletePhoto(photo) {
   if (err2) throw new Error(err2.message);
 }
 
+// Photo of the view from your seat, for a seat report. Returns its storage path.
+export async function uploadSeatPhoto({ placeId, userId, file }) {
+  const { blob } = await compressImage(file);
+  const path = `${placeId}/${userId}/seatview-${crypto.randomUUID()}.jpg`;
+  const up = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000", upsert: false });
+  if (up.error) throw new Error(up.error.message);
+  return path;
+}
+
+export async function removeFile(path) {
+  if (path) await supabase.storage.from(BUCKET).remove([path]);
+}
+
 // Remove every photo file a person uploaded (used before deleting their account)
 export async function deleteAllMyPhotos(userId) {
-  const { data } = await supabase.from("place_photos").select("path").eq("user_id", userId);
-  const paths = (data || []).map((p) => p.path);
+  const [{ data }, { data: seats }] = await Promise.all([
+    supabase.from("place_photos").select("path").eq("user_id", userId),
+    supabase.from("seat_reports").select("photo_path").eq("user_id", userId),
+  ]);
+  const paths = [...(data || []).map((p) => p.path), ...(seats || []).map((s) => s.photo_path).filter(Boolean)];
   for (let i = 0; i < paths.length; i += 100) await supabase.storage.from(BUCKET).remove(paths.slice(i, i + 100));
 }

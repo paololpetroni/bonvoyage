@@ -3,9 +3,12 @@ import { Link, Navigate } from "react-router-dom";
 import { supabase, isConfigured } from "../lib/supabase.js";
 import { useAuth } from "../lib/auth.jsx";
 import { SetupNeeded } from "../App.jsx";
+import { usePersonal } from "../lib/personal.jsx";
+import { LogoMark } from "../components/Logo.jsx";
 
 export default function SignIn() {
   const { user } = useAuth();
+  const me = usePersonal();
   const [mode, setMode] = useState("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,18 +16,22 @@ export default function SignIn() {
   const [message, setMessage] = useState({ kind: "", text: "" });
 
   if (!isConfigured) return <SetupNeeded />;
-  if (user) return <Navigate to="/profile" replace />;
+  if (user) {
+    // New accounts go to the quick start; returning travelers go to their picks
+    if (!me.loaded) return <p className="muted">Signing you in…</p>;
+    return <Navigate to={me.onboarded ? "/" : "/welcome"} replace />;
+  }
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
     setMessage({ kind: "", text: "" });
-    const redirect = window.location.origin + "/profile";
+    const redirect = window.location.origin + "/welcome";
     const { data, error } =
       mode === "sign-up"
         ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirect } })
         : mode === "reset"
-          ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirect })
+          ? await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/profile#password" })
           : await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (error) return setMessage({ kind: "error", text: error.message });
@@ -33,15 +40,20 @@ export default function SignIn() {
   }
 
   async function google() {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/profile" } });
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/sign-in" } });
     if (error) setMessage({ kind: "error", text: "Google sign-in isn't set up yet. Use email for now. (" + error.message + ")" });
   }
 
   const titles = { "sign-in": "Sign in", "sign-up": "Create your account", reset: "Reset your password" };
 
   return (
-    <section className="panel narrow">
-      <h1>{titles[mode]}</h1>
+    <section className="panel narrow auth">
+      <div className="auth-head">
+        <LogoMark size={48} />
+        <h1>{titles[mode]}</h1>
+        {mode === "sign-up" && <p className="muted">Rate the places you love and get picks that match your taste, anywhere you travel.</p>}
+        {mode === "sign-in" && <p className="muted">Welcome back, traveler.</p>}
+      </div>
       <form onSubmit={submit} className="stack">
         <label className="field">Email
           <input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />

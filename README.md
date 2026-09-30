@@ -17,6 +17,11 @@ Phase 1 is done when you can sign up, sign in, and see the Community tab (empty 
 | `supabase/003_ratings.sql` | Update 3: rating checks and community breakdown |
 | `supabase/004_photos.sql` | Update 4: photo storage and rules |
 | `supabase/005_taste.sql` | Update 5: taste profiles and Best for you |
+| `supabase/006_matching.sql` | Update 6: travelers like you, popular cities |
+| `supabase/007_seats.sql` | Update 7: seat reports and section guides |
+| `supabase/008_friends.sql` | Update 8: usernames, friends, score counts for charts |
+| `src/lib/venues.js` | Venues with drawn seating maps (add more here) |
+| `src/lib/learning.js` | Learning your taste from your own ratings |
 | `src/lib/cuisines.js` | Cuisine families and regions (add regions here) |
 | `src/lib/ranking.js` | How the Best for you score is worked out |
 | `src/lib/photon.js` | Place search (Photon, built on OpenStreetMap) and sorting results into categories |

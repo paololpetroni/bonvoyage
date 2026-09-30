@@ -114,3 +114,36 @@ export async function searchCities(q, { signal } = {}) {
 }
 
 export const DEFAULT_CITY = { name: "Montreal", region: "Quebec, Canada", lat: 45.5019, lon: -73.5674, extent: [-73.98, 45.71, -73.47, 45.41] };
+
+// The town at a point (for "Near me"): uses Photon's reverse lookup
+export async function reverseCity(lat, lon) {
+  const url = new URL(PHOTON_URL.replace("/api/", "/reverse"));
+  url.searchParams.set("lat", lat);
+  url.searchParams.set("lon", lon);
+  url.searchParams.set("lang", LANG);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Couldn't work out where you are.");
+  const p = (await res.json()).features?.[0]?.properties || {};
+  const name = p.city || p.town || p.village || p.district || p.county || p.name;
+  if (!name) throw new Error("Couldn't work out where you are.");
+  return { name, region: [p.state, p.country].filter(Boolean).join(", "), lat, lon, extent: null };
+}
+
+// The street address at a point (for "I'm there now" when adding a missing place)
+export async function reverseAddress(lat, lon) {
+  const url = new URL(PHOTON_URL.replace("/api/", "/reverse"));
+  url.searchParams.set("lat", lat);
+  url.searchParams.set("lon", lon);
+  url.searchParams.set("lang", LANG);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Couldn't look up that spot.");
+  const p = (await res.json()).features?.[0]?.properties || {};
+  const street = [p.housenumber, p.street].filter(Boolean).join(" ");
+  return {
+    lat, lon,
+    address: [street, p.postcode].filter(Boolean).join(", ") || null,
+    neighbourhood: p.district || p.locality || null,
+    city: p.city || p.town || p.village || p.county || null,
+    label: street || p.name || "Your current location",
+  };
+}

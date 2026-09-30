@@ -26,7 +26,9 @@ export default function Privacy() {
       <h2>What we collect</h2>
       <ul>
         <li><strong>Account details.</strong> Your email address and a hashed password, or your Google account email if you sign in with Google.</li>
-        <li><strong>Profile.</strong> The display name and home city you choose, and your taste and budget preferences.</li>
+        <li><strong>Profile.</strong> The display name, username and home city you choose, and your taste and budget preferences.</li>
+        <li><strong>Friends.</strong> Who you've added as a friend and pending requests.</li>
+        <li><strong>Seat reports.</strong> For sports venues: the event, date, section, row, seat, price and view rating you enter.</li>
         <li><strong>Your contributions.</strong> Ratings, tags, what you say you spent, places you add, and photos you upload. Before upload, photos are resized and hidden details such as the GPS location where they were taken are removed.</li>
         <li><strong>Technical data.</strong> Our hosting providers keep standard server logs (such as IP address and time of request) for security.</li>
       </ul>
@@ -35,7 +37,9 @@ export default function Privacy() {
       <h2>Why we use it</h2>
       <ul>
         <li>To run your account and keep you signed in.</li>
-        <li>To show community scores. Other people see the combined score for a place, not your individual ratings.</li>
+        <li>To show community scores. People who aren't your friends see the combined score for a place, not your individual ratings.</li>
+        <li>To share with your friends. Friends you accept can see your ratings and your list, and that you rated a place. They can't see your email or your seat dates. Removing a friend stops this right away.</li>
+        <li>To build seat guides. Others see averages and photos per section, never who sat where or when.</li>
         <li>To show your photos on the place's page. Photos are public, so avoid uploading pictures of people who haven't agreed to it.</li>
         <li>To personalize recommendations, including comparing your ratings with other travelers' to find people with similar taste. This is automated and only affects the order of suggestions shown to you.</li>
         <li>To prevent abuse such as fake ratings.</li>

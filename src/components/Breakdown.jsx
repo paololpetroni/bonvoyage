@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase.js";
 import { CATEGORIES } from "../lib/categories.js";
 import { cuisineLabel } from "../lib/cuisines.js";
+import { ScoreHistogram } from "./Charts.jsx";
 
 // What everyone who rated this place said, as averages and tag counts
-export default function Breakdown({ place, category, refreshKey }) {
+export default function Breakdown({ place, category, refreshKey, mine }) {
   const [data, setData] = useState(null);
   const [err, setErr] = useState("");
   const cat = CATEGORIES[category];
@@ -31,6 +32,7 @@ export default function Breakdown({ place, category, refreshKey }) {
 
   return (
     <div className="breakdown">
+      {data.dist && <div className="tag-row"><span className="muted small">How people scored it</span><ScoreHistogram dist={data.dist} label="ratings" mine={mine ? Math.round(mine * 2) : null} /></div>}
       {cuisineList.length > 0 && (
         <div className="tag-row"><span className="muted small">Cuisine</span>
           <div className="chips">{cuisineList.map(([k, c]) => <span key={k} className="chip tag">{cuisineLabel(k.slice(2))} <span className="muted">{pct(c)}</span></span>)}</div>

@@ -4,10 +4,12 @@
 // tagGroups: what raters tick. Stored on ratings as "<prefix>:<option>", e.g. "a:cozy", "g:date".
 //   The group marked occasion: true feeds the "What's the occasion?" picker.
 // Restaurants also carry cuisines ("c:italian/molisano"), see cuisines.js.
+// cover: which photo slot to show on a card first
 // photos: labelled photo slots, one photo per slot per person. Keep in sync with supabase/004_photos.sql
 
 export const CATEGORIES = {
   restaurants: {
+    cover: ["vibe", "main", "dessert", "app"],
     photos: [["app", "Appetizer"], ["main", "Main"], ["dessert", "Dessert"], ["vibe", "Vibe"]],
     one: "Restaurant",
     label: "Restaurants",
@@ -29,6 +31,7 @@ export const CATEGORIES = {
     ],
   },
   bars: {
+    cover: ["vibe", "drinks"],
     photos: [["drinks", "Drinks"], ["vibe", "Vibe"]],
     one: "Bar",
     label: "Bars & breweries",
@@ -50,6 +53,7 @@ export const CATEGORIES = {
     ],
   },
   hotels: {
+    cover: ["room", "view", "common", "bathroom"],
     photos: [["room", "Room"], ["bathroom", "Bathroom"], ["view", "View"], ["common", "Common areas"]],
     one: "Hotel",
     label: "Hotels",
@@ -74,6 +78,7 @@ export const CATEGORIES = {
     ],
   },
   sports: {
+    cover: ["atmos", "seat", "food"],
     photos: [["seat", "View from your seat"], ["atmos", "Atmosphere"], ["food", "Food & drink"]],
     one: "Sports venue",
     label: "Sports events",
@@ -94,6 +99,7 @@ export const CATEGORIES = {
     ],
   },
   sights: {
+    cover: ["highlight", "view", "crowds"],
     photos: [["highlight", "Highlight"], ["view", "View"], ["crowds", "Crowds"]],
     one: "Sight",
     label: "Tourist attractions",
